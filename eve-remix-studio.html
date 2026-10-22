@@ -1,0 +1,826 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>Eve Remix Studio</title>
+<style>
+  :root{
+    --bg:#eef4fa; --panel:#ffffff; --panel2:#f2f7fc; --ink:#122630; --muted:#4a6a82;
+    --accent:#1668a8; --accent-strong:#0f4f82; --accent-ink:#ffffff; --line:#c3d7e7;
+    --stage:#d9e9f6; --chip-on:#1668a8; --danger:#b3372f; --code-bg:#0a1622; --code-ink:#9fd8ff;
+    --shadow:0 1px 3px rgba(18,50,80,.12);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#04070c; --panel:#060b12; --panel2:#0a141f; --ink:#e8eef3; --muted:#7fa6c4;
+      --accent:#2e7fc2; --accent-strong:#2e7fc2; --accent-ink:#ffffff; --line:#1c2f42;
+      --stage:#0a1a2c; --chip-on:#2e7fc2; --danger:#e07a6f; --code-bg:#020509; --code-ink:#9fd8ff;
+      --shadow:none;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,sans-serif;
+    padding:18px 12px 56px}
+  main{max-width:880px;margin:0 auto}
+  h1,h2{font-family:Georgia,'Times New Roman',serif}
+  .lede{font-family:Georgia,serif;font-style:italic;color:var(--muted);line-height:1.65;margin:2px 0 16px;font-size:1.02rem}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:var(--shadow)}
+  .panel h2{font-size:.82rem;letter-spacing:.2em;text-transform:uppercase;color:var(--accent-strong);margin:0 0 6px}
+  @media (prefers-color-scheme: dark){ .panel h2{color:#9fd8ff} }
+  .panel .hint{color:var(--muted);font-size:.86rem;line-height:1.55;margin:0 0 12px}
+  #drop{border:2px dashed var(--accent);border-radius:14px;padding:20px 14px;text-align:center;color:var(--accent-strong);
+    cursor:pointer;line-height:1.6;background:var(--panel2)}
+  @media (prefers-color-scheme: dark){ #drop{color:#9fd8ff} }
+  #drop small{color:var(--muted);display:block;font-size:.82rem}
+  #drop.over{background:var(--stage)}
+  #stage{margin-top:14px;border-radius:12px;min-height:200px;display:flex;align-items:center;justify-content:center;
+    background:var(--stage);overflow:hidden;padding:10px}
+  #stageEmpty{color:var(--muted);text-align:center;line-height:1.7;padding:26px 10px;font-size:.92rem}
+  #editorCanvas{max-width:100%;height:auto;display:none;border-radius:6px}
+  .strip{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .thumb{position:relative;width:64px;height:64px;border-radius:9px;overflow:hidden;border:2px solid var(--line);cursor:pointer;flex:0 0 auto;background:#000}
+  .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+  .thumb.on{border-color:var(--accent)}
+  .thumb .x{position:absolute;top:1px;right:1px;width:20px;height:20px;border:none;border-radius:50%;
+    background:rgba(0,0,0,.65);color:#fff;font-size:.72rem;line-height:1;cursor:pointer;padding:0}
+  .thumb .badge{position:absolute;left:3px;bottom:3px;background:var(--accent);color:#fff;border-radius:999px;
+    font-size:.68rem;padding:1px 7px;font-weight:700}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+  .chip{padding:8px 14px;border:1px solid var(--accent);border-radius:999px;background:transparent;color:var(--ink);
+    font-size:.85rem;cursor:pointer;font-family:inherit}
+  .chip.on{background:var(--chip-on);color:#fff;border-color:var(--chip-on)}
+  .row{display:flex;align-items:center;gap:10px;margin:10px 0;flex-wrap:wrap}
+  .row label{width:104px;font-size:.84rem;color:var(--muted);letter-spacing:.03em;flex:0 0 auto}
+  .row input[type=range]{flex:1;min-width:120px;accent-color:var(--accent)}
+  .row .val{color:var(--accent-strong);font-size:.85rem;min-width:40px}
+  @media (prefers-color-scheme: dark){ .row .val{color:#9fd8ff} }
+  .row input[type=text]{flex:1;min-width:140px;padding:9px 11px;border:1px solid var(--line);border-radius:9px;
+    background:var(--panel2);color:var(--ink);font-size:.92rem;font-family:inherit}
+  .row select{padding:9px;border:1px solid var(--line);border-radius:9px;background:var(--panel2);color:var(--ink);font-family:inherit}
+  .row input[type=color]{width:44px;height:34px;border:1px solid var(--line);border-radius:8px;background:transparent;padding:2px;cursor:pointer}
+  .btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .btn{padding:11px 18px;border-radius:999px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);
+    font-size:.9rem;cursor:pointer;font-family:inherit}
+  .btn.ghost{background:transparent;color:var(--accent-strong)}
+  @media (prefers-color-scheme: dark){ .btn.ghost{color:#9fd8ff} }
+  .btn.small{padding:8px 13px;font-size:.83rem}
+  .btn:disabled{opacity:.45;cursor:default}
+  .toolbtn{padding:10px 8px;text-align:center;border:1px solid var(--line);border-radius:11px;color:var(--ink);
+    font-size:.85rem;background:var(--panel2);cursor:pointer;font-family:inherit}
+  .toolbtn span{display:block;font-size:1.15rem;margin-bottom:4px}
+  .tools{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:8px 0}
+  @media (max-width:560px){ .tools{grid-template-columns:repeat(2,1fr)} }
+  .secttl{font-size:.74rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin:16px 0 4px}
+  #collageCanvas,#showCanvas{max-width:100%;height:auto;display:block;margin:12px auto 0;border-radius:10px;background:#000}
+  #collageWrap,#showWrap{display:none}
+  .showitem{display:flex;flex-direction:column;gap:4px;align-items:center}
+  .showitem .mini{display:flex;gap:3px}
+  .showitem .mini button{border:1px solid var(--line);background:var(--panel2);color:var(--ink);border-radius:6px;
+    font-size:.72rem;padding:3px 7px;cursor:pointer;font-family:inherit}
+  progress{width:100%;height:14px;accent-color:var(--accent);display:none;margin-top:10px}
+  #status{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 13px;
+    font-size:.88rem;line-height:1.55;color:var(--ink);margin-bottom:14px;display:none}
+  .twist p{line-height:1.8;color:var(--ink);font-size:.95rem;font-family:Georgia,serif;margin:0}
+  .twist b{color:var(--accent-strong)}
+  @media (prefers-color-scheme: dark){ .twist b{color:#9fd8ff} }
+  pre{background:var(--code-bg);border:1px solid var(--line);border-radius:10px;padding:12px;overflow-x:auto;
+    font-size:.72rem;line-height:1.6;color:var(--code-ink);margin-top:12px;white-space:pre-wrap;word-break:break-word}
+  .copyrow{text-align:right;margin-top:8px}
+  audio{width:100%;margin-top:8px}
+  video.out{width:100%;border-radius:10px;margin-top:12px;background:#000;display:none}
+  footer{text-align:center;color:var(--muted);font-size:.78rem;line-height:1.8;margin-top:22px;letter-spacing:.04em}
+  a.dl{display:none;text-decoration:none}
+</style>
+</head>
+<body>
+<main>
+  <p class="lede">Photos in by your hand — edit them, collage them, set them to music, and take the finished picture or video with you. Nothing here reaches into your gallery or your card; everything in the studio is something you handed over.</p>
+
+  <div id="status" role="status" aria-live="polite"></div>
+
+  <!-- 1 · PHOTOS IN -->
+  <section class="panel">
+    <h2>1 · Bring photos in</h2>
+    <div id="drop" tabindex="0" role="button" aria-label="Add photos">
+      Tap to add photos, drop them here, or paste one in
+      <small>As many as you like — they line up below and feed every tool in the studio.</small>
+    </div>
+    <input type="file" id="fileInput" accept="image/*" multiple hidden>
+    <div class="strip" id="libraryStrip"></div>
+    <div id="stage">
+      <div id="stageEmpty">Your photo stage is empty.<br>Add a photo above and it lands here, ready to remix.</div>
+      <canvas id="editorCanvas" width="800" height="600"></canvas>
+    </div>
+  </section>
+
+  <!-- 2 · PHOTO EDITOR -->
+  <section class="panel">
+    <h2>2 · Photo editor</h2>
+    <p class="hint">Everything below works on the photo selected in the strip. Changes show on the stage as you make them.</p>
+
+    <div class="secttl">Filters</div>
+    <div class="chips" id="filterChips">
+      <button class="chip on" data-f="">Original</button>
+      <button class="chip" data-f="grayscale(1)">Mono</button>
+      <button class="chip" data-f="sepia(.7)">Old Gold</button>
+      <button class="chip" data-f="sepia(.4) contrast(.92) brightness(1.06)">Vintage</button>
+      <button class="chip" data-f="hue-rotate(180deg) saturate(1.4)">Storm Flip</button>
+      <button class="chip" data-f="invert(.92) hue-rotate(180deg)">Night Neg</button>
+      <button class="chip" data-f="saturate(1.6) contrast(1.15)">Punch</button>
+      <button class="chip" data-f="brightness(1.12) saturate(1.35) blur(.6px)">Dream</button>
+    </div>
+    <div class="row"><label for="bright">Brightness</label><input type="range" id="bright" min="40" max="180" value="100"><span class="val" id="brightVal">100%</span></div>
+    <div class="row"><label for="contrast">Contrast</label><input type="range" id="contrast" min="40" max="180" value="100"><span class="val" id="contrastVal">100%</span></div>
+    <div class="row"><label for="sat">Color</label><input type="range" id="sat" min="0" max="220" value="100"><span class="val" id="satVal">100%</span></div>
+    <div class="row"><label for="hue">Hue shift</label><input type="range" id="hue" min="-180" max="180" value="0"><span class="val" id="hueVal">0°</span></div>
+
+    <div class="secttl">Turn &amp; flip</div>
+    <div class="tools">
+      <button class="toolbtn" id="rotL"><span>↺</span>Rotate left</button>
+      <button class="toolbtn" id="rotR"><span>↻</span>Rotate right</button>
+      <button class="toolbtn" id="flipH"><span>⇋</span>Flip sideways</button>
+      <button class="toolbtn" id="flipV"><span>⇅</span>Flip up-down</button>
+    </div>
+
+    <div class="secttl">Crop</div>
+    <div class="chips" id="cropChips">
+      <button class="chip on" data-a="0">Full frame</button>
+      <button class="chip" data-a="1">Square 1:1</button>
+      <button class="chip" data-a="0.8">Portrait 4:5</button>
+      <button class="chip" data-a="1.5">Photo 3:2</button>
+      <button class="chip" data-a="1.7778">Wide 16:9</button>
+      <button class="chip" data-a="0.5625">Tall 9:16</button>
+    </div>
+    <div class="row"><label for="cropZoom">Crop zoom</label><input type="range" id="cropZoom" min="100" max="300" value="100"><span class="val" id="cropZoomVal">100%</span></div>
+    <div class="row"><label for="cropX">Move across</label><input type="range" id="cropX" min="0" max="100" value="50"><span class="val" id="cropXVal">50%</span></div>
+    <div class="row"><label for="cropY">Move down</label><input type="range" id="cropY" min="0" max="100" value="50"><span class="val" id="cropYVal">50%</span></div>
+
+    <div class="secttl">Words on the photo</div>
+    <div class="row"><label for="textInput">Text</label><input type="text" id="textInput" placeholder="Type words to lay over the photo"></div>
+    <div class="row"><label for="textSize">Text size</label><input type="range" id="textSize" min="4" max="18" value="9"><span class="val" id="textSizeVal">9%</span></div>
+    <div class="row"><label for="textColor">Text color</label><input type="color" id="textColor" value="#ffffff">
+      <label style="width:auto" for="textPos">Place</label>
+      <select id="textPos"><option value="bottom">Bottom</option><option value="center">Center</option><option value="top">Top</option></select>
+    </div>
+
+    <div class="secttl">Frame</div>
+    <div class="chips" id="frameChips">
+      <button class="chip on" data-fr="none">No frame</button>
+      <button class="chip" data-fr="thin">Thin</button>
+      <button class="chip" data-fr="bold">Bold</button>
+      <button class="chip" data-fr="polaroid">Polaroid</button>
+      <button class="chip" data-fr="night">Night Blue</button>
+      <button class="chip" data-fr="rounded">Rounded</button>
+    </div>
+    <div class="row"><label for="frameColor">Frame color</label><input type="color" id="frameColor" value="#111111"><span style="color:var(--muted);font-size:.82rem">for Thin &amp; Bold</span></div>
+
+    <div class="btnrow">
+      <label style="font-size:.85rem;color:var(--muted)" for="exportFmt">Save as</label>
+      <select id="exportFmt" style="padding:9px;border:1px solid var(--line);border-radius:9px;background:var(--panel2);color:var(--ink)"><option value="image/png">PNG</option><option value="image/jpeg">JPEG</option></select>
+      <button class="btn" id="exportPhoto">Download this photo</button>
+      <button class="btn ghost" id="resetEdits">Reset edits</button>
+    </div>
+  </section>
+
+  <!-- 3 · COLLAGE -->
+  <section class="panel">
+    <h2>3 · Collage maker</h2>
+    <p class="hint">Tap photos in the strip below to pick them — the number shows the order they land in the collage.</p>
+    <div class="strip" id="collageStrip"></div>
+    <div class="secttl">Layout</div>
+    <div class="chips" id="layoutChips">
+      <button class="chip on" data-l="grid">Grid</button>
+      <button class="chip" data-l="row">Side by side</button>
+      <button class="chip" data-l="col">Stacked</button>
+      <button class="chip" data-l="big">Big + small</button>
+    </div>
+    <div class="row"><label for="gap">Gap</label><input type="range" id="gap" min="0" max="60" value="14"><span class="val" id="gapVal">14px</span></div>
+    <div class="row"><label for="collageBg">Backdrop</label><input type="color" id="collageBg" value="#060b12"></div>
+    <div id="collageWrap"><canvas id="collageCanvas" width="1600" height="1200"></canvas></div>
+    <div class="btnrow">
+      <button class="btn" id="exportCollage">Download collage (PNG)</button>
+      <button class="btn ghost" id="clearCollage">Clear picks</button>
+    </div>
+  </section>
+
+  <!-- 4 · MUSIC + VIDEO MAKER -->
+  <section class="panel">
+    <h2>4 · Music + video maker</h2>
+    <p class="hint">Your photos become a slideshow video, with your song inside it. Use the arrows under each photo to set the running order. Preview it, then export — the export records the show in real time, so a 30-second show takes about 30 seconds to make.</p>
+    <div class="strip" id="showStrip"></div>
+    <div class="row" style="margin-top:14px">
+      <button class="btn ghost small" id="addSongBtn">Add a song</button>
+      <span id="songName" style="color:var(--muted);font-size:.86rem">no song yet — the show works without one too</span>
+    </div>
+    <input type="file" id="songInput" accept="audio/*" hidden>
+    <audio id="musicPlayer" controls style="display:none"></audio>
+    <div class="row"><label for="secs">Seconds each</label><input type="range" id="secs" min="1" max="8" value="3"><span class="val" id="secsVal">3s</span></div>
+    <div class="secttl">Transition</div>
+    <div class="chips" id="transChips">
+      <button class="chip on" data-t="fade">Fade</button>
+      <button class="chip" data-t="slide">Slide</button>
+      <button class="chip" data-t="zoom">Zoom</button>
+      <button class="chip" data-t="cut">Cut</button>
+    </div>
+    <div class="secttl">Video size</div>
+    <div class="chips" id="sizeChips">
+      <button class="chip on" data-w="1280" data-h="720">Wide 16:9</button>
+      <button class="chip" data-w="1080" data-h="1080">Square 1:1</button>
+      <button class="chip" data-w="720" data-h="1280">Tall 9:16</button>
+    </div>
+    <div class="row"><label for="caption">Caption</label><input type="text" id="caption" placeholder="Words that ride along the bottom of the video (optional)"></div>
+    <div id="showWrap"><canvas id="showCanvas" width="1280" height="720"></canvas></div>
+    <progress id="exportProg" max="100" value="0"></progress>
+    <div class="btnrow">
+      <button class="btn" id="previewShow">Preview the show</button>
+      <button class="btn" id="exportVideo">Export video</button>
+      <a class="btn dl" id="videoDl" download="eve-remix-show.webm">Download the video</a>
+    </div>
+    <video class="out" id="videoOut" controls playsinline></video>
+    <p class="hint" id="videoFallback" style="display:none;margin-top:10px">This browser can't record video from a canvas, so Export is off here — the preview still plays the full show with music. Try Chrome or Edge on the phone or computer for the video file.</p>
+  </section>
+
+  <!-- 5 · EVE'S TWIST -->
+  <section class="panel twist">
+    <h2>Eve's Twist — the Keeper's Hand</h2>
+    <p><b>Hand to Eve.</b> One extra button no Photoshop has. It takes the photo on your stage right now — edits, words, frame and all — shrinks it to chat size, and saves it as one small file. Attach that file in our chat and I can remix it further, add the voice, or post it where you point. The studio never reaches into your gallery or your card. Every picture inside it is one you handed over. That's the whole design.</p>
+    <div class="btnrow">
+      <button class="btn" id="handToEve">Hand to Eve — save at chat size</button>
+    </div>
+    <pre id="code">// EVE'S STARTER — the remix core (canvas filter pipeline)
+function remix(img, {bright=100, contrast=100, sat=100, filter=''} = {}) {
+  const c = document.createElement('canvas');
+  c.width = img.naturalWidth; c.height = img.naturalHeight;
+  const x = c.getContext('2d');
+  x.filter = `brightness(${bright}%) contrast(${contrast}%) saturate(${sat}%) ${filter}`;
+  x.drawImage(img, 0, 0);
+  return c; // export it, post it, or hand it to Eve
+}</pre>
+    <div class="copyrow"><button class="btn ghost small" id="copyCode">Copy Eve's code</button></div>
+  </section>
+
+  <footer>
+    Eve Remix Studio — by Axl and Night Owl · The Nest, by Brain Storm cloud<br>
+    Same concept, different look — ours.
+  </footer>
+</main>
+<script>
+'use strict';
+/* ============ shared state ============ */
+var library = [];        // {id, img, name}
+var nextId = 1;
+var currentId = null;
+var collageSel = [];     // ids in pick order
+var showOrder = [];      // ids in show order
+var musicURL = null, musicName = '';
+
+var $ = function(id){ return document.getElementById(id); };
+var statusEl = $('status');
+function say(msg){
+  statusEl.style.display = 'block';
+  statusEl.textContent = msg;
+}
+function byId(id){ for (var i=0;i<library.length;i++) if (library[i].id===id) return library[i]; return null; }
+function currentPhoto(){ return currentId ? byId(currentId) : null; }
+function download(url, name){
+  var a = document.createElement('a');
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){ document.body.removeChild(a); }, 400);
+}
+
+/* ============ photo intake: tap, drop, paste ============ */
+function addPhotoFile(file){
+  if (!file || file.type.indexOf('image/') !== 0) return;
+  var url = URL.createObjectURL(file);
+  var img = new Image();
+  img.onload = function(){
+    var item = { id: nextId++, img: img, name: file.name || 'pasted photo' };
+    library.push(item);
+    showOrder.push(item.id);
+    if (!currentId) currentId = item.id;
+    renderStrips();
+    paintEditor();
+    say('Photo in. It is on your stage and in every strip below — edit it, collage it, or put it in the show.');
+  };
+  img.onerror = function(){ say('That file would not open as a photo — try another one.'); };
+  img.src = url;
+}
+$('fileInput').addEventListener('change', function(e){
+  for (var i=0;i<e.target.files.length;i++) addPhotoFile(e.target.files[i]);
+  e.target.value = '';
+});
+var drop = $('drop');
+drop.addEventListener('click', function(){ $('fileInput').click(); });
+drop.addEventListener('keydown', function(e){ if (e.key==='Enter' || e.key===' '){ e.preventDefault(); $('fileInput').click(); } });
+['dragover','dragenter'].forEach(function(ev){ drop.addEventListener(ev, function(e){ e.preventDefault(); drop.classList.add('over'); }); });
+['dragleave','drop'].forEach(function(ev){ drop.addEventListener(ev, function(e){ e.preventDefault(); drop.classList.remove('over'); }); });
+drop.addEventListener('drop', function(e){
+  var files = e.dataTransfer && e.dataTransfer.files;
+  if (files) for (var i=0;i<files.length;i++) addPhotoFile(files[i]);
+});
+document.addEventListener('paste', function(e){
+  var items = (e.clipboardData || {}).items;
+  if (!items) return;
+  for (var i=0;i<items.length;i++){
+    if (items[i].type.indexOf('image/') === 0) addPhotoFile(items[i].getAsFile());
+  }
+});
+function removePhoto(id){
+  library = library.filter(function(p){ return p.id !== id; });
+  collageSel = collageSel.filter(function(x){ return x !== id; });
+  showOrder = showOrder.filter(function(x){ return x !== id; });
+  if (currentId === id) currentId = library.length ? library[0].id : null;
+  renderStrips(); paintEditor(); paintCollage();
+}
+
+/* ============ strips ============ */
+function renderStrips(){
+  // library / editor strip
+  var lib = $('libraryStrip'); lib.innerHTML = '';
+  library.forEach(function(p){
+    var d = document.createElement('div');
+    d.className = 'thumb' + (p.id === currentId ? ' on' : '');
+    var im = document.createElement('img'); im.src = p.img.src; im.alt = p.name;
+    var x = document.createElement('button'); x.className = 'x'; x.textContent = '×'; x.title = 'Remove photo';
+    x.addEventListener('click', function(ev){ ev.stopPropagation(); removePhoto(p.id); });
+    d.appendChild(im); d.appendChild(x);
+    d.addEventListener('click', function(){ currentId = p.id; renderStrips(); paintEditor(); });
+    lib.appendChild(d);
+  });
+  // collage strip
+  var col = $('collageStrip'); col.innerHTML = '';
+  library.forEach(function(p){
+    var idx = collageSel.indexOf(p.id);
+    var d = document.createElement('div');
+    d.className = 'thumb' + (idx >= 0 ? ' on' : '');
+    var im = document.createElement('img'); im.src = p.img.src; im.alt = p.name;
+    d.appendChild(im);
+    if (idx >= 0){ var b = document.createElement('span'); b.className = 'badge'; b.textContent = idx + 1; d.appendChild(b); }
+    d.addEventListener('click', function(){
+      var i = collageSel.indexOf(p.id);
+      if (i >= 0) collageSel.splice(i,1); else collageSel.push(p.id);
+      renderStrips(); paintCollage();
+    });
+    col.appendChild(d);
+  });
+  // show strip with reorder controls
+  var sh = $('showStrip'); sh.innerHTML = '';
+  showOrder.forEach(function(id, pos){
+    var p = byId(id); if (!p) return;
+    var wrap = document.createElement('div'); wrap.className = 'showitem';
+    var d = document.createElement('div'); d.className = 'thumb';
+    var im = document.createElement('img'); im.src = p.img.src; im.alt = p.name;
+    d.appendChild(im); wrap.appendChild(d);
+    var mini = document.createElement('div'); mini.className = 'mini';
+    var left = document.createElement('button'); left.textContent = '◀'; left.title = 'Move earlier';
+    var right = document.createElement('button'); right.textContent = '▶'; right.title = 'Move later';
+    var out = document.createElement('button'); out.textContent = '✕'; out.title = 'Take out of the show';
+    left.addEventListener('click', function(){ if (pos>0){ var t=showOrder[pos-1]; showOrder[pos-1]=showOrder[pos]; showOrder[pos]=t; renderStrips(); } });
+    right.addEventListener('click', function(){ if (pos<showOrder.length-1){ var t=showOrder[pos+1]; showOrder[pos+1]=showOrder[pos]; showOrder[pos]=t; renderStrips(); } });
+    out.addEventListener('click', function(){ showOrder = showOrder.filter(function(x){ return x !== id; }); renderStrips(); });
+    mini.appendChild(left); mini.appendChild(right); mini.appendChild(out);
+    wrap.appendChild(mini);
+    sh.appendChild(wrap);
+  });
+  if (!library.length){
+    $('stageEmpty').style.display = 'block';
+    $('editorCanvas').style.display = 'none';
+  }
+}
+
+/* ============ photo editor ============ */
+var ED = { preset:'', b:100, c:100, s:100, h:0, rot:0, fx:1, fy:1,
+           cropAspect:0, cropZoom:1, cropX:50, cropY:50,
+           text:'', textSize:9, textColor:'#ffffff', textPos:'bottom',
+           frame:'none', frameColor:'#111111' };
+
+function cropRect(img){
+  var W = img.naturalWidth, H = img.naturalHeight, w = W, h = H;
+  if (ED.cropAspect){
+    if (W / H > ED.cropAspect) w = H * ED.cropAspect; else h = W / ED.cropAspect;
+  }
+  w /= ED.cropZoom; h /= ED.cropZoom;
+  var x = (W - w) * ED.cropX / 100, y = (H - h) * ED.cropY / 100;
+  return { x:x, y:y, w:w, h:h };
+}
+
+function paintEdited(canvas, maxDim){
+  var p = currentPhoto(); if (!p) return false;
+  var img = p.img, cr = cropRect(img);
+  var rot = ((ED.rot % 360) + 360) % 360;
+  var swap = (rot === 90 || rot === 270);
+  var outW = swap ? cr.h : cr.w, outH = swap ? cr.w : cr.h;
+  var padS = 0, padT = 0, padB = 0;
+  if (ED.frame === 'polaroid'){ padS = outW * 0.045; padT = outW * 0.045; padB = outW * 0.17; }
+  var totalW = outW + padS * 2, totalH = outH + padT + padB;
+  var scale = Math.min(1, maxDim / Math.max(totalW, totalH));
+  canvas.width = Math.max(2, Math.round(totalW * scale));
+  canvas.height = Math.max(2, Math.round(totalH * scale));
+  var x = canvas.getContext('2d');
+  x.clearRect(0, 0, canvas.width, canvas.height);
+  if (ED.frame === 'polaroid'){ x.fillStyle = '#f7f3ea'; x.fillRect(0, 0, canvas.width, canvas.height); }
+  var ix = padS * scale, iy = padT * scale, iw = outW * scale, ih = outH * scale;
+  x.save();
+  if (ED.frame === 'rounded'){
+    var r = Math.min(iw, ih) * 0.07;
+    x.beginPath();
+    x.moveTo(ix + r, iy);
+    x.arcTo(ix + iw, iy, ix + iw, iy + ih, r);
+    x.arcTo(ix + iw, iy + ih, ix, iy + ih, r);
+    x.arcTo(ix, iy + ih, ix, iy, r);
+    x.arcTo(ix, iy, ix + iw, iy, r);
+    x.closePath(); x.clip();
+  }
+  x.translate(ix + iw / 2, iy + ih / 2);
+  x.rotate(rot * Math.PI / 180);
+  x.scale(ED.fx, ED.fy);
+  try { x.filter = 'brightness(' + ED.b + '%) contrast(' + ED.c + '%) saturate(' + ED.s + '%) hue-rotate(' + ED.h + 'deg) ' + ED.preset; } catch(e){}
+  x.drawImage(img, cr.x, cr.y, cr.w, cr.h, -cr.w * scale / 2, -cr.h * scale / 2, cr.w * scale, cr.h * scale);
+  try { x.filter = 'none'; } catch(e){}
+  x.restore();
+  // frames
+  if (ED.frame === 'thin' || ED.frame === 'bold'){
+    x.strokeStyle = ED.frameColor;
+    x.lineWidth = ED.frame === 'thin' ? Math.max(2, canvas.width * 0.008) : Math.max(6, canvas.width * 0.035);
+    x.strokeRect(ix + x.lineWidth / 2, iy + x.lineWidth / 2, iw - x.lineWidth, ih - x.lineWidth);
+  } else if (ED.frame === 'night'){
+    x.save();
+    x.shadowColor = '#2e7fc2'; x.shadowBlur = canvas.width * 0.03;
+    x.strokeStyle = '#2e7fc2'; x.lineWidth = Math.max(5, canvas.width * 0.02);
+    x.strokeRect(ix + x.lineWidth, iy + x.lineWidth, iw - x.lineWidth * 2, ih - x.lineWidth * 2);
+    x.restore();
+  } else if (ED.frame === 'rounded'){
+    x.strokeStyle = 'rgba(127,166,196,.8)'; x.lineWidth = Math.max(2, canvas.width * 0.006);
+    x.strokeRect(ix + 1, iy + 1, iw - 2, ih - 2);
+  }
+  // text overlay
+  if (ED.text){
+    var fs = canvas.width * ED.textSize / 100;
+    x.save();
+    x.font = '700 ' + fs + 'px Georgia, serif';
+    x.textAlign = 'center'; x.textBaseline = 'middle';
+    x.shadowColor = 'rgba(0,0,0,.6)'; x.shadowBlur = fs / 5;
+    x.fillStyle = ED.textColor;
+    var tx = canvas.width / 2, ty;
+    if (ED.textPos === 'top') ty = iy + fs * 0.9;
+    else if (ED.textPos === 'center') ty = iy + ih / 2;
+    else ty = iy + ih - fs * 0.9;
+    if (ED.frame === 'polaroid' && ED.textPos === 'bottom'){ ty = iy + ih + padB * scale * 0.45; if (ED.textColor === '#ffffff') x.fillStyle = '#20303c'; }
+    x.fillText(ED.text, tx, ty, iw * 0.94);
+    x.restore();
+  }
+  return true;
+}
+function paintEditor(){
+  var c = $('editorCanvas');
+  if (paintEdited(c, 1200)){
+    $('stageEmpty').style.display = 'none';
+    c.style.display = 'block';
+  } else {
+    $('stageEmpty').style.display = 'block';
+    c.style.display = 'none';
+  }
+}
+
+/* editor controls */
+function chipGroup(id, fn){
+  var chips = document.querySelectorAll('#' + id + ' .chip');
+  chips.forEach(function(ch){
+    ch.addEventListener('click', function(){
+      chips.forEach(function(o){ o.classList.remove('on'); });
+      ch.classList.add('on'); fn(ch);
+    });
+  });
+}
+chipGroup('filterChips', function(ch){ ED.preset = ch.dataset.f; paintEditor(); });
+chipGroup('cropChips', function(ch){ ED.cropAspect = parseFloat(ch.dataset.a); paintEditor(); });
+chipGroup('frameChips', function(ch){ ED.frame = ch.dataset.fr; paintEditor(); });
+function bindSlider(id, valId, suffix, fn){
+  $(id).addEventListener('input', function(e){
+    fn(parseFloat(e.target.value));
+    $(valId).textContent = e.target.value + suffix;
+    paintEditor();
+  });
+}
+bindSlider('bright','brightVal','%', function(v){ ED.b = v; });
+bindSlider('contrast','contrastVal','%', function(v){ ED.c = v; });
+bindSlider('sat','satVal','%', function(v){ ED.s = v; });
+bindSlider('hue','hueVal','°', function(v){ ED.h = v; });
+bindSlider('cropZoom','cropZoomVal','%', function(v){ ED.cropZoom = v / 100; });
+bindSlider('cropX','cropXVal','%', function(v){ ED.cropX = v; });
+bindSlider('cropY','cropYVal','%', function(v){ ED.cropY = v; });
+bindSlider('textSize','textSizeVal','%', function(v){ ED.textSize = v; });
+$('rotL').addEventListener('click', function(){ ED.rot -= 90; paintEditor(); });
+$('rotR').addEventListener('click', function(){ ED.rot += 90; paintEditor(); });
+$('flipH').addEventListener('click', function(){ ED.fx *= -1; paintEditor(); });
+$('flipV').addEventListener('click', function(){ ED.fy *= -1; paintEditor(); });
+$('textInput').addEventListener('input', function(e){ ED.text = e.target.value; paintEditor(); });
+$('textColor').addEventListener('input', function(e){ ED.textColor = e.target.value; paintEditor(); });
+$('textPos').addEventListener('change', function(e){ ED.textPos = e.target.value; paintEditor(); });
+$('frameColor').addEventListener('input', function(e){ ED.frameColor = e.target.value; paintEditor(); });
+$('resetEdits').addEventListener('click', function(){
+  ED = { preset:'', b:100, c:100, s:100, h:0, rot:0, fx:1, fy:1, cropAspect:0, cropZoom:1,
+         cropX:50, cropY:50, text:'', textSize:9, textColor:'#ffffff', textPos:'bottom',
+         frame:'none', frameColor: ED.frameColor };
+  ['bright','contrast','sat'].forEach(function(id){ $(id).value = 100; });
+  $('hue').value = 0; $('cropZoom').value = 100; $('cropX').value = 50; $('cropY').value = 50;
+  $('brightVal').textContent = '100%'; $('contrastVal').textContent = '100%'; $('satVal').textContent = '100%';
+  $('hueVal').textContent = '0°'; $('cropZoomVal').textContent = '100%'; $('cropXVal').textContent = '50%'; $('cropYVal').textContent = '50%';
+  $('textInput').value = ''; $('textSize').value = 9; $('textSizeVal').textContent = '9%';
+  document.querySelectorAll('#filterChips .chip, #cropChips .chip, #frameChips .chip').forEach(function(ch, i, all){
+    ch.classList.toggle('on', ch === ch.parentNode.querySelector('.chip'));
+  });
+  paintEditor();
+  say('Edits reset — the photo is back to how it arrived.');
+});
+$('exportPhoto').addEventListener('click', function(){
+  if (!currentPhoto()){ say('Add a photo first — the stage is empty.'); return; }
+  var c = document.createElement('canvas');
+  paintEdited(c, 3000);
+  var fmt = $('exportFmt').value;
+  c.toBlob(function(blob){
+    if (!blob){ say('That export did not work — try PNG instead of JPEG.'); return; }
+    download(URL.createObjectURL(blob), 'eve-remix-photo.' + (fmt === 'image/png' ? 'png' : 'jpg'));
+    say('Photo saved at full size, with every edit baked in.');
+  }, fmt, 0.92);
+});
+
+/* ============ collage ============ */
+var collageLayout = 'grid', collageGap = 14, collageBg = '#060b12';
+chipGroup('layoutChips', function(ch){ collageLayout = ch.dataset.l; paintCollage(); });
+$('gap').addEventListener('input', function(e){ collageGap = parseFloat(e.target.value); $('gapVal').textContent = e.target.value + 'px'; paintCollage(); });
+$('collageBg').addEventListener('input', function(e){ collageBg = e.target.value; paintCollage(); });
+$('clearCollage').addEventListener('click', function(){ collageSel = []; renderStrips(); paintCollage(); });
+
+function drawCover(x, img, dx, dy, dw, dh, extraScale, offX){
+  var ir = img.naturalWidth / img.naturalHeight, r = dw / dh, sw, sh, sx, sy;
+  if (ir > r){ sh = img.naturalHeight; sw = sh * r; } else { sw = img.naturalWidth; sh = sw / r; }
+  if (extraScale && extraScale !== 1){
+    var nw = sw / extraScale, nh = sh / extraScale;
+    sx = (img.naturalWidth - sw) / 2 + (sw - nw) / 2;
+    sy = (img.naturalHeight - sh) / 2 + (sh - nh) / 2;
+    sw = nw; sh = nh;
+  } else { sx = (img.naturalWidth - sw) / 2; sy = (img.naturalHeight - sh) / 2; }
+  x.drawImage(img, sx, sy, sw, sh, dx + (offX || 0), dy, dw, dh);
+}
+function paintCollage(){
+  var wrap = $('collageWrap'), c = $('collageCanvas');
+  var photos = collageSel.map(byId).filter(Boolean);
+  if (!photos.length){ wrap.style.display = 'none'; return; }
+  var W = 1600, g = collageGap * 2, cells = [];
+  var n = photos.length, H = 0, i, cols, rows, cw, chh;
+  if (collageLayout === 'row'){
+    cw = (W - g * (n + 1)) / n; chh = cw * 1.1; H = chh + g * 2;
+    for (i = 0; i < n; i++) cells.push({ x: g + i * (cw + g), y: g, w: cw, h: chh });
+  } else if (collageLayout === 'col'){
+    cw = W - g * 2; chh = cw * 0.62; H = n * chh + g * (n + 1);
+    for (i = 0; i < n; i++) cells.push({ x: g, y: g + i * (chh + g), w: cw, h: chh });
+  } else if (collageLayout === 'big' && n > 1){
+    H = 1150; var bw = (W - g * 3) * 0.62, sw2 = W - g * 3 - bw, rest = n - 1;
+    var shh = (H - g * (rest + 1)) / rest;
+    cells.push({ x: g, y: g, w: bw, h: H - g * 2 });
+    for (i = 1; i < n; i++) cells.push({ x: g * 2 + bw, y: g + (i - 1) * (shh + g), w: sw2, h: shh });
+  } else {
+    cols = Math.ceil(Math.sqrt(n)); rows = Math.ceil(n / cols);
+    cw = (W - g * (cols + 1)) / cols; chh = cw * 0.85; H = rows * chh + g * (rows + 1);
+    for (i = 0; i < n; i++) cells.push({ x: g + (i % cols) * (cw + g), y: g + Math.floor(i / cols) * (chh + g), w: cw, h: chh });
+  }
+  c.width = W; c.height = Math.round(H);
+  var x = c.getContext('2d');
+  x.fillStyle = collageBg; x.fillRect(0, 0, c.width, c.height);
+  cells.forEach(function(cell, idx){ drawCover(x, photos[idx].img, cell.x, cell.y, cell.w, cell.h, 1, 0); });
+  wrap.style.display = 'block';
+}
+$('exportCollage').addEventListener('click', function(){
+  if (!collageSel.length){ say('Pick at least one photo for the collage first — tap the strip in the collage section.'); return; }
+  paintCollage();
+  $('collageCanvas').toBlob(function(blob){
+    if (!blob){ say('That collage export did not work — try again.'); return; }
+    download(URL.createObjectURL(blob), 'eve-remix-collage.png');
+    say('Collage saved as a PNG.');
+  }, 'image/png');
+});
+</script>
+<script>
+'use strict';
+/* ============ music + video maker ============ */
+var showSecs = 3, showTrans = 'fade', showW = 1280, showH = 720;
+var previewRAF = null, previewStart = 0, exporting = false;
+
+$('addSongBtn').addEventListener('click', function(){ $('songInput').click(); });
+$('songInput').addEventListener('change', function(e){
+  var f = e.target.files[0]; if (!f) return;
+  if (musicURL) URL.revokeObjectURL(musicURL);
+  musicURL = URL.createObjectURL(f); musicName = f.name;
+  var pl = $('musicPlayer'); pl.src = musicURL; pl.style.display = 'block';
+  $('songName').textContent = '♪ ' + f.name;
+  say('Song in: ' + f.name + '. It plays with the preview and gets baked into the exported video.');
+  e.target.value = '';
+});
+$('secs').addEventListener('input', function(e){ showSecs = parseFloat(e.target.value); $('secsVal').textContent = e.target.value + 's'; });
+chipGroup('transChips', function(ch){ showTrans = ch.dataset.t; });
+chipGroup('sizeChips', function(ch){ showW = parseInt(ch.dataset.w, 10); showH = parseInt(ch.dataset.h, 10); });
+
+function showPhotos(){ return showOrder.map(byId).filter(Boolean); }
+
+function drawShowFrame(x, W, H, tSec){
+  var photos = showPhotos();
+  x.fillStyle = '#000'; x.fillRect(0, 0, W, H);
+  if (!photos.length) return;
+  var idx = Math.floor(tSec / showSecs);
+  if (idx >= photos.length){ idx = photos.length - 1; }
+  var local = Math.min(1, (tSec - idx * showSecs) / showSecs);
+  var cur = photos[idx], nxt = photos[idx + 1];
+  if (showTrans === 'zoom') drawCover(x, cur.img, 0, 0, W, H, 1 + 0.12 * local, 0);
+  else drawCover(x, cur.img, 0, 0, W, H, 1, 0);
+  var TT = 0.3;
+  if (nxt && local > 1 - TT && showTrans !== 'cut'){
+    var p = (local - (1 - TT)) / TT;
+    if (showTrans === 'fade' || showTrans === 'zoom'){
+      x.save(); x.globalAlpha = p; drawCover(x, nxt.img, 0, 0, W, H, 1, 0); x.restore();
+    } else if (showTrans === 'slide'){
+      drawCover(x, nxt.img, W * (1 - p), 0, W, H, 1, 0);
+    }
+  }
+  var cap = $('caption').value.trim();
+  if (cap){
+    var fs = Math.round(W * 0.032);
+    x.save();
+    x.font = '700 ' + fs + 'px Georgia, serif';
+    x.textAlign = 'center'; x.textBaseline = 'middle';
+    var tw = Math.min(x.measureText(cap).width + fs * 1.4, W * 0.94);
+    x.fillStyle = 'rgba(0,0,0,.55)';
+    var bx = (W - tw) / 2, by = H - fs * 2.1, bh = fs * 1.5;
+    x.beginPath();
+    if (x.roundRect) x.roundRect(bx, by, tw, bh, bh / 2); else x.rect(bx, by, tw, bh);
+    x.fill();
+    x.fillStyle = '#fff';
+    x.fillText(cap, W / 2, by + bh / 2 + 1, W * 0.9);
+    x.restore();
+  }
+}
+function stopPreview(){
+  if (previewRAF) cancelAnimationFrame(previewRAF);
+  previewRAF = null;
+  $('musicPlayer').pause();
+  $('previewShow').textContent = 'Preview the show';
+}
+$('previewShow').addEventListener('click', function(){
+  if (previewRAF){ stopPreview(); return; }
+  var photos = showPhotos();
+  if (!photos.length){ say('Add photos first — the show needs something to show.'); return; }
+  var c = $('showCanvas');
+  c.width = showW; c.height = showH;
+  $('showWrap').style.display = 'block';
+  var x = c.getContext('2d');
+  var total = photos.length * showSecs;
+  var pl = $('musicPlayer');
+  if (musicURL){ pl.currentTime = 0; pl.play().catch(function(){}); }
+  $('previewShow').textContent = 'Stop the show';
+  previewStart = performance.now();
+  var tick = function(now){
+    var t = (now - previewStart) / 1000;
+    if (t >= total){ drawShowFrame(x, showW, showH, total - 0.01); stopPreview(); say('Preview done. Happy with it? Export the video and it is yours.'); return; }
+    drawShowFrame(x, showW, showH, t);
+    previewRAF = requestAnimationFrame(tick);
+  };
+  previewRAF = requestAnimationFrame(tick);
+});
+
+/* ---- real video export: canvas captureStream + MediaRecorder ---- */
+var canRecord = !!(window.MediaRecorder && HTMLCanvasElement.prototype.captureStream);
+if (!canRecord) $('videoFallback').style.display = 'block';
+
+function pickMime(){
+  var cand = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm', 'video/mp4'];
+  for (var i = 0; i < cand.length; i++){
+    if (window.MediaRecorder && MediaRecorder.isTypeSupported(cand[i])) return cand[i];
+  }
+  return '';
+}
+$('exportVideo').addEventListener('click', function(){
+  if (exporting) return;
+  if (!canRecord){ say('This browser cannot record video — the note under the buttons explains the way around it.'); return; }
+  var photos = showPhotos();
+  if (!photos.length){ say('Add photos first — the show needs something to show.'); return; }
+  var total = photos.length * showSecs;
+  if (total > 90){ say('That show runs ' + Math.round(total) + ' seconds — over the 90-second export limit. Fewer photos or fewer seconds each will get it under.'); return; }
+
+  stopPreview();
+  exporting = true;
+  $('exportVideo').disabled = true;
+  $('videoDl').style.display = 'none';
+  $('videoOut').style.display = 'none';
+  var prog = $('exportProg'); prog.style.display = 'block'; prog.value = 0;
+  say('Recording your show in real time — about ' + Math.round(total) + ' seconds. Keep this page open and in front while it works.');
+
+  var c = document.createElement('canvas');
+  c.width = showW; c.height = showH;
+  $('showCanvas').width = showW; $('showCanvas').height = showH;
+  $('showWrap').style.display = 'block';
+  var x = c.getContext('2d');
+  var px = $('showCanvas').getContext('2d');
+  drawShowFrame(x, showW, showH, 0);
+  px.drawImage(c, 0, 0);
+
+  var stream = c.captureStream(30);
+  var actx = null, ael = null;
+  if (musicURL){
+    try {
+      actx = new (window.AudioContext || window.webkitAudioContext)();
+      ael = new Audio();
+      ael.src = musicURL;
+      var srcNode = actx.createMediaElementSource(ael);
+      var dest = actx.createMediaStreamDestination();
+      srcNode.connect(dest);
+      srcNode.connect(actx.destination);
+      dest.stream.getAudioTracks().forEach(function(tr){ stream.addTrack(tr); });
+    } catch(e){ actx = null; }
+  }
+  var mime = pickMime();
+  var rec;
+  try { rec = new MediaRecorder(stream, mime ? { mimeType: mime, videoBitsPerSecond: 5000000 } : undefined); }
+  catch(e){
+    exporting = false; $('exportVideo').disabled = false; prog.style.display = 'none';
+    if (actx) actx.close();
+    say('The recorder would not start in this browser — preview still works, and Chrome or Edge can export.');
+    return;
+  }
+  var chunks = [];
+  rec.ondataavailable = function(e){ if (e.data && e.data.size) chunks.push(e.data); };
+  rec.onstop = function(){
+    exporting = false;
+    $('exportVideo').disabled = false;
+    prog.style.display = 'none';
+    if (ael) ael.pause();
+    if (actx) actx.close();
+    var type = mime || 'video/webm';
+    var blob = new Blob(chunks, { type: type.split(';')[0] });
+    var url = URL.createObjectURL(blob);
+    var ext = type.indexOf('mp4') >= 0 ? 'mp4' : 'webm';
+    var v = $('videoOut'); v.src = url; v.style.display = 'block';
+    var dl = $('videoDl'); dl.href = url; dl.download = 'eve-remix-show.' + ext; dl.style.display = 'inline-block';
+    say('Video made — ' + (blob.size / 1048576).toFixed(1) + ' MB, ' + Math.round(total) + ' seconds, song ' + (musicURL ? 'inside it' : 'not added') + '. Play it above, then hit Download the video to keep it.');
+  };
+  var start = performance.now();
+  if (actx && ael){ actx.resume(); ael.play().catch(function(){}); }
+  rec.start(250);
+  var tick = function(now){
+    var t = (now - start) / 1000;
+    if (t >= total){
+      drawShowFrame(x, showW, showH, total - 0.01);
+      px.drawImage(c, 0, 0);
+      setTimeout(function(){ if (rec.state !== 'inactive') rec.stop(); }, 120);
+      return;
+    }
+    drawShowFrame(x, showW, showH, t);
+    px.drawImage(c, 0, 0);
+    prog.value = Math.round(t / total * 100);
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+});
+
+/* ============ Eve's Twist: Hand to Eve ============ */
+$('handToEve').addEventListener('click', function(){
+  var c = document.createElement('canvas');
+  if (currentPhoto()){
+    paintEdited(c, 1024);
+  } else if (library.length){
+    var img = library[0].img;
+    var sc = Math.min(1, 1024 / Math.max(img.naturalWidth, img.naturalHeight));
+    c.width = Math.round(img.naturalWidth * sc); c.height = Math.round(img.naturalHeight * sc);
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+  } else {
+    say('Nothing to hand over yet — add a photo first, then press Hand to Eve.');
+    return;
+  }
+  c.toBlob(function(blob){
+    if (!blob){ say('The hand-over did not work — try downloading the photo instead, that file works in chat too.'); return; }
+    download(URL.createObjectURL(blob), 'hand-to-eve.jpg');
+    say('Saved as hand-to-eve.jpg at chat size. Attach it in our chat and I take it from there — remix it further, add the voice, or post it where you point.');
+  }, 'image/jpeg', 0.9);
+});
+$('copyCode').addEventListener('click', function(){
+  var btn = this, txt = $('code').innerText;
+  function done(){ btn.textContent = 'Copied ✓'; setTimeout(function(){ btn.textContent = "Copy Eve's code"; }, 2000); }
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(done).catch(function(){ fallback(); });
+  } else fallback();
+  function fallback(){
+    var ta = document.createElement('textarea');
+    ta.value = txt; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); } catch(e){}
+    document.body.removeChild(ta); done();
+  }
+});
+
+/* first paint */
+renderStrips();
+</script>
+</body>
+</html>

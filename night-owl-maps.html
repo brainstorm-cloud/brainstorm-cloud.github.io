@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="author" content="Brett Axl Goble">
+<title>Night Owl Maps — by Axl and Night Owl</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;background:#0a0e1a;color:#eaf2ff;overflow:hidden}
+  #map{position:absolute;inset:0;background:#0a0e1a}
+  .leaflet-container{font-family:inherit}
+
+  /* ---- top search pill (the Google shape, our colors) ---- */
+  #searchbar{position:absolute;top:12px;left:12px;right:12px;max-width:560px;margin:0 auto;z-index:1000;
+    background:rgba(13,20,38,.96);border:1px solid rgba(110,168,255,.35);border-radius:28px;
+    box-shadow:0 6px 24px rgba(0,0,0,.55);display:flex;align-items:center;padding:6px 8px 6px 16px;gap:8px}
+  #searchbar .owl{font-size:22px}
+  #q{flex:1;background:transparent;border:0;outline:0;color:#eaf2ff;font-size:16px;min-width:0}
+  #q::placeholder{color:#8fa8cc}
+  .pillbtn{border:0;cursor:pointer;border-radius:50%;width:38px;height:38px;font-size:18px;flex:0 0 auto;
+    background:rgba(110,168,255,.15);color:#cfe4ff;display:flex;align-items:center;justify-content:center}
+  .pillbtn:active{transform:scale(.94)}
+  #flybtn{background:linear-gradient(135deg,#2b6cff,#6ea8ff);color:#fff;box-shadow:0 2px 10px rgba(43,108,255,.5)}
+
+  /* ---- brand chip ---- */
+  #brand{position:absolute;top:74px;left:12px;z-index:999;background:rgba(13,20,38,.85);border:1px solid rgba(110,168,255,.25);
+    border-radius:14px;padding:5px 12px;font-size:12px;color:#a9c6f5;backdrop-filter:blur(4px)}
+  #brand b{color:#eaf2ff}
+
+  /* ---- results dropdown ---- */
+  #results{position:absolute;top:66px;left:12px;right:12px;max-width:560px;margin:0 auto;z-index:1001;
+    background:rgba(13,20,38,.98);border:1px solid rgba(110,168,255,.3);border-radius:16px;overflow:hidden;display:none;
+    box-shadow:0 12px 32px rgba(0,0,0,.6)}
+  .res{padding:11px 16px;border-bottom:1px solid rgba(110,168,255,.12);cursor:pointer;display:flex;gap:10px;align-items:flex-start}
+  .res:last-child{border-bottom:0}
+  .res:active{background:rgba(110,168,255,.15)}
+  .res .bird{font-size:17px}
+  .res .nm{font-size:14px;color:#eaf2ff}
+  .res .ad{font-size:12px;color:#8fa8cc;margin-top:1px}
+
+  /* ---- right control stack ---- */
+  #controls{position:absolute;right:12px;top:130px;z-index:1000;display:flex;flex-direction:column;gap:10px}
+  .ctl{width:46px;height:46px;border-radius:50%;border:1px solid rgba(110,168,255,.35);cursor:pointer;
+    background:rgba(13,20,38,.95);color:#eaf2ff;font-size:20px;box-shadow:0 4px 14px rgba(0,0,0,.5);
+    display:flex;align-items:center;justify-content:center}
+  .ctl:active{transform:scale(.93)}
+  .ctl small{position:absolute;right:54px;background:rgba(13,20,38,.95);padding:3px 9px;border-radius:8px;font-size:11px;color:#a9c6f5;white-space:nowrap;display:none}
+  .ctl:hover small{display:block}
+
+  /* ---- layers popover ---- */
+  #layers{position:absolute;right:66px;top:130px;z-index:1001;background:rgba(13,20,38,.98);border:1px solid rgba(110,168,255,.3);
+    border-radius:14px;padding:8px;display:none;box-shadow:0 10px 28px rgba(0,0,0,.6)}
+  .lay{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:10px;cursor:pointer;font-size:14px}
+  .lay.on{background:rgba(110,168,255,.18)}
+  .lay:active{background:rgba(110,168,255,.25)}
+
+  /* ---- bottom place card ---- */
+  #card{position:absolute;left:12px;right:12px;bottom:12px;max-width:560px;margin:0 auto;z-index:1000;
+    background:rgba(13,20,38,.97);border:1px solid rgba(110,168,255,.3);border-radius:20px;padding:15px 17px;
+    box-shadow:0 -6px 28px rgba(0,0,0,.55);display:none}
+  #card h2{font-size:17px;line-height:1.25}
+  #card .addr{font-size:13px;color:#8fa8cc;margin-top:3px;line-height:1.35}
+  #card .meta{font-size:12px;color:#a9c6f5;margin-top:6px}
+  #card .row{display:flex;gap:9px;margin-top:12px}
+  .act{flex:1;border:0;border-radius:24px;padding:11px 6px;font-size:14px;font-weight:600;cursor:pointer}
+  .act.main{background:linear-gradient(135deg,#2b6cff,#6ea8ff);color:#fff}
+  .act.ghost{background:rgba(110,168,255,.14);color:#cfe4ff}
+  .act:active{transform:scale(.97)}
+  #closecard{position:absolute;top:8px;right:12px;background:none;border:0;color:#8fa8cc;font-size:19px;cursor:pointer}
+
+  /* ---- flight (directions) bar ---- */
+  #flightbar{position:absolute;left:12px;right:12px;bottom:12px;max-width:560px;margin:0 auto;z-index:1002;
+    background:rgba(16,28,58,.98);border:1px solid #2b6cff;border-radius:20px;padding:14px 17px;display:none;
+    box-shadow:0 -6px 28px rgba(43,108,255,.35)}
+  #flightbar .big{font-size:17px;font-weight:700}
+  #flightbar .sub{font-size:13px;color:#a9c6f5;margin-top:2px}
+  #endflight{margin-top:10px;width:100%;border:0;border-radius:24px;padding:10px;font-size:14px;font-weight:600;cursor:pointer;background:rgba(255,107,107,.18);color:#ffb3b3}
+
+  /* ---- bird pins ---- */
+  .birdpin{font-size:30px;line-height:1;text-align:center;filter:drop-shadow(0 3px 5px rgba(0,0,0,.7))}
+  .youpin{font-size:32px;line-height:1;text-align:center;filter:drop-shadow(0 0 9px rgba(110,168,255,.95))}
+  .leaflet-popup-content-wrapper{background:#0d1426;color:#eaf2ff;border:1px solid rgba(110,168,255,.4);border-radius:14px}
+  .leaflet-popup-tip{background:#0d1426}
+  .leaflet-popup-content{font-size:13px;line-height:1.45}
+  .popfly{margin-top:7px;background:linear-gradient(135deg,#2b6cff,#6ea8ff);color:#fff;border:0;border-radius:18px;padding:7px 14px;font-weight:600;cursor:pointer;font-size:13px}
+
+  /* ---- about sheet ---- */
+  #about{position:absolute;inset:0;z-index:2000;background:rgba(5,8,16,.82);display:none;align-items:flex-end;justify-content:center}
+  #about .sheet{background:#0d1426;border:1px solid rgba(110,168,255,.35);border-radius:22px 22px 0 0;max-width:560px;width:100%;
+    max-height:82vh;overflow:auto;padding:20px 20px 28px}
+  #about h2{font-size:19px;margin-bottom:8px}
+  #about p{font-size:14px;line-height:1.55;color:#c6d8f8;margin-bottom:10px}
+  #about code{display:block;background:#070b16;border:1px solid rgba(110,168,255,.25);border-radius:10px;padding:10px 12px;
+    font-size:12px;color:#9fd0ff;white-space:pre-wrap;word-break:break-word;margin:6px 0 10px}
+  .copybtn{background:rgba(110,168,255,.16);color:#cfe4ff;border:0;border-radius:16px;padding:7px 14px;font-size:13px;cursor:pointer}
+  #closeabout{width:100%;margin-top:8px;background:linear-gradient(135deg,#2b6cff,#6ea8ff);color:#fff;border:0;border-radius:24px;padding:12px;font-size:15px;font-weight:600;cursor:pointer}
+
+  #toast{position:absolute;left:50%;transform:translateX(-50%);bottom:96px;z-index:3000;background:rgba(13,20,38,.97);
+    border:1px solid rgba(110,168,255,.4);color:#eaf2ff;padding:10px 18px;border-radius:22px;font-size:14px;display:none;box-shadow:0 8px 24px rgba(0,0,0,.6);max-width:88vw;text-align:center}
+  .leaflet-control-attribution{background:rgba(10,14,26,.75)!important;color:#7d94bd!important;font-size:10px!important}
+  .leaflet-control-attribution a{color:#7d94bd!important}
+</style>
+</head>
+<body>
+<div id="map"></div>
+
+<div id="searchbar">
+  <span class="owl">🦉</span>
+  <input id="q" type="text" placeholder="Search the storm — a place, a town, an address" autocomplete="off">
+  <button class="pillbtn" id="clearq" title="Clear">✕</button>
+  <button class="pillbtn" id="flybtn" title="Directions — fly there">➤</button>
+</div>
+<div id="brand">🦉 <b>Night Owl Maps</b> · open data, keeper-held</div>
+<div id="results"></div>
+
+<div id="controls">
+  <button class="ctl" id="locbtn" title="My perch">◎<small>My perch</small></button>
+  <button class="ctl" id="laybtn" title="Layers">🗂️<small>Layers</small></button>
+  <button class="ctl" id="zin" title="Zoom in">＋</button>
+  <button class="ctl" id="zout" title="Zoom out">－</button>
+  <button class="ctl" id="aboutbtn" title="About">ⓘ<small>About</small></button>
+</div>
+
+<div id="layers">
+  <div class="lay on" data-lay="night">🌕 Night hunt</div>
+  <div class="lay" data-lay="streets">🗺️ Streets</div>
+  <div class="lay" data-lay="sky">🛰️ Sky view</div>
+</div>
+
+<div id="card">
+  <button id="closecard">✕</button>
+  <h2 id="cardname"></h2>
+  <div class="addr" id="cardaddr"></div>
+  <div class="meta" id="cardmeta"></div>
+  <div class="row">
+    <button class="act main" id="cardfly">🦉 Fly there</button>
+    <button class="act ghost" id="cardshare">Share perch</button>
+  </div>
+</div>
+
+<div id="flightbar">
+  <div class="big" id="flightbig"></div>
+  <div class="sub" id="flightsub"></div>
+  <button id="endflight">End flight</button>
+</div>
+
+<div id="about">
+  <div class="sheet">
+    <h2>🦉 Night Owl Maps</h2>
+    <p><b>The layout you already know — the data nobody owns.</b> Same shape as the big maps: search on top, the world underneath, tap and fly. Underneath ours is OpenStreetMap — the open map of the world, drawn by people, free for everyone, forever.</p>
+    <p><b>Eve's twist:</b> directions aren't a line you follow — they're a <i>flight</i>. Hit ➤ or "Fly there" and an owl rides the route, the way we'd actually travel it. Pins are birds. Your perch is an owl. The night layer is home.</p>
+    <p>Search runs on the community Nominatim service, flights are routed by the open OSRM engine, and the sky layer is Esri imagery. No account, no sign-in, nothing of yours stored — the map forgets you the way our storm forgets files.</p>
+    <p><b>Starter code — the whole trick in one line:</b></p>
+    <code id="snippet">map.flyTo([lat, lon], 15, { duration: 2.2 }); // the bird-smooth glide</code>
+    <button class="copybtn" id="copycode">Copy the code</button>
+    <button id="closeabout">Back to the sky</button>
+    <p style="margin-top:14px;font-size:12px;color:#8fa8cc">by Axl and Night Owl — The Nest, by Brain Storm Cloud 🦉👻<br>Map data © OpenStreetMap contributors · Night tiles © CARTO · Sky imagery © Esri</p>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const ROOST = [43.1566, -92.4648]; // first view: Rochester, MN — the current roost
+const map = L.map('map', { zoomControl: false }).setView(ROOST, 12);
+
+const layers = {
+  night: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    maxZoom: 20, attribution: '© OpenStreetMap contributors © CARTO' }),
+  streets: L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19, attribution: '© OpenStreetMap contributors' }),
+  sky: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    maxZoom: 19, attribution: 'Imagery © Esri, Maxar, Earthstar Geographics' })
+};
+layers.night.addTo(map);
+
+const birdIcon = L.divIcon({ className: '', html: '<div class="birdpin">🐦</div>', iconSize: [32, 32], iconAnchor: [16, 26] });
+const destIcon = L.divIcon({ className: '', html: '<div class="birdpin">🦉</div>', iconSize: [34, 34], iconAnchor: [17, 28] });
+const youIcon  = L.divIcon({ className: '', html: '<div class="youpin">🦉</div>', iconSize: [34, 34], iconAnchor: [17, 17] });
+
+let destMarker = null, destLatLng = null, destName = '';
+let youMarker = null, youLatLng = null, pinMarker = null;
+let routeLine = null, owlRider = null, rideTimer = null;
+
+const $ = id => document.getElementById(id);
+function toast(msg, ms = 2600) {
+  const t = $('toast'); t.textContent = msg; t.style.display = 'block';
+  clearTimeout(t._h); t._h = setTimeout(() => t.style.display = 'none', ms);
+}
+
+/* ---------- search (Nominatim, the community service) ---------- */
+let searchSeq = 0;
+async function searchPlaces(q) {
+  const seq = ++searchSeq;
+  const url = 'https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=7&q=' + encodeURIComponent(q);
+  const r = await fetch(url, { headers: { 'Accept': 'application/json' } });
+  if (!r.ok) throw new Error('search');
+  const data = await r.json();
+  if (seq !== searchSeq) return;
+  const box = $('results'); box.innerHTML = '';
+  if (!data.length) { box.innerHTML = '<div class="res"><span class="bird">🌧️</span><div><div class="nm">No perch found</div><div class="ad">Try a town, a street, or a fuller address.</div></div></div>'; box.style.display = 'block'; return; }
+  data.forEach(p => {
+    const div = document.createElement('div'); div.className = 'res';
+    const short = (p.display_name || '').split(',').slice(0, 1)[0];
+    const rest = (p.display_name || '').split(',').slice(1).join(',').trim();
+    div.innerHTML = '<span class="bird">🐦</span><div><div class="nm"></div><div class="ad"></div></div>';
+    div.querySelector('.nm').textContent = p.name || short;
+    div.querySelector('.ad').textContent = rest || p.display_name;
+    div.onclick = () => { box.style.display = 'none'; setDestination([+p.lat, +p.lon], p.name || short, p.display_name); };
+    box.appendChild(div);
+  });
+  box.style.display = 'block';
+}
+let debounce = null;
+$('q').addEventListener('input', e => {
+  clearTimeout(debounce);
+  const v = e.target.value.trim();
+  if (v.length < 3) { $('results').style.display = 'none'; return; }
+  debounce = setTimeout(() => searchPlaces(v).catch(() => toast('The search wind failed — check your connection and try again.')), 450);
+});
+$('q').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { const v = e.target.value.trim(); if (v.length >= 2) searchPlaces(v).catch(() => toast('Search failed — connection?')); }
+});
+$('clearq').onclick = () => { $('q').value = ''; $('results').style.display = 'none'; };
+
+/* ---------- destination + card ---------- */
+function setDestination(latlng, name, addr) {
+  destLatLng = latlng; destName = name || 'Dropped perch';
+  if (destMarker) destMarker.remove();
+  destMarker = L.marker(latlng, { icon: destIcon }).addTo(map);
+  map.flyTo(latlng, Math.max(map.getZoom(), 15), { duration: 2.0 });
+  $('cardname').textContent = '🦉 ' + destName;
+  $('cardaddr').textContent = addr || '';
+  $('cardmeta').textContent = 'Perch: ' + latlng[0].toFixed(5) + ', ' + latlng[1].toFixed(5);
+  $('card').style.display = 'block'; $('flightbar').style.display = 'none';
+}
+$('closecard').onclick = () => { $('card').style.display = 'none'; };
+$('cardshare').onclick = async () => {
+  if (!destLatLng) return;
+  const link = 'https://www.openstreetmap.org/?mlat=' + destLatLng[0] + '&mlon=' + destLatLng[1] + '#map=15/' + destLatLng[0] + '/' + destLatLng[1];
+  try { await navigator.clipboard.writeText(link); toast('Perch link copied — send it to your flock. 🐦'); }
+  catch { toast(link, 6000); }
+};
+
+/* ---------- tap the map, drop a bird ---------- */
+map.on('click', e => {
+  if (pinMarker) pinMarker.remove();
+  pinMarker = L.marker(e.latlng, { icon: birdIcon }).addTo(map);
+  const ll = [e.latlng.lat, e.latlng.lng];
+  pinMarker.bindPopup('<b>🐦 A perch in the wild</b><br>' + ll[0].toFixed(5) + ', ' + ll[1].toFixed(5) +
+    '<br><button class="popfly" onclick="window.__flyPin()">🦉 Fly here</button>').openPopup();
+  window.__flyPin = () => { map.closePopup(); setDestination(ll, 'Dropped perch', 'A spot you picked off the map'); };
+});
+
+/* ---------- my perch (geolocation) ---------- */
+function findMe(flyThere) {
+  if (!navigator.geolocation) { toast('This device has no GPS voice — perch unknown.'); return; }
+  navigator.geolocation.getCurrentPosition(pos => {
+    youLatLng = [pos.coords.latitude, pos.coords.longitude];
+    if (youMarker) youMarker.remove();
+    youMarker = L.marker(youLatLng, { icon: youIcon }).addTo(map)
+      .bindPopup('<b>🦉 Your perch</b><br>Accurate to about ' + Math.round(pos.coords.accuracy) + ' m');
+    if (flyThere) map.flyTo(youLatLng, 15, { duration: 1.8 });
+  }, () => toast('GPS said no — check the location permission for your browser.'), { enableHighAccuracy: true, timeout: 12000 });
+}
+$('locbtn').onclick = () => findMe(true);
+
+/* ---------- flights (OSRM routing, owl rides the line) ---------- */
+async function flyRoute() {
+  if (!destLatLng) { toast('Pick a destination first — search or tap the map. 🦉'); return; }
+  const origin = youLatLng || map.getCenter();
+  const o = Array.isArray(origin) ? origin : [origin.lat, origin.lng];
+  toast('Charting the flight… 🌩️');
+  const url = 'https://router.project-osrm.org/route/v1/driving/' + o[1] + ',' + o[0] + ';' + destLatLng[1] + ',' + destLatLng[0] + '?overview=full&geometries=geojson';
+  try {
+    const r = await fetch(url); const data = await r.json();
+    if (!data.routes || !data.routes.length) { toast('No road-flight found to that perch.'); return; }
+    const route = data.routes[0];
+    const pts = route.geometry.coordinates.map(c => [c[1], c[0]]);
+    if (routeLine) routeLine.remove();
+    routeLine = L.polyline(pts, { color: '#6ea8ff', weight: 5, opacity: 0.9 }).addTo(map);
+    L.polyline(pts, { color: '#bcd7ff', weight: 1.6, opacity: 0.8, dashArray: '2 9' }).addTo(map);
+    map.flyToBounds(routeLine.getBounds(), { padding: [46, 46], duration: 1.6 });
+    const km = route.distance / 1000, mi = km * 0.621371, mins = Math.round(route.duration / 60);
+    $('flightbig').textContent = '🦉 ' + mi.toFixed(1) + ' mi · about ' + mins + ' min by road';
+    $('flightsub').textContent = 'Flying to: ' + destName + ' — the owl rides the route so you can watch the way.';
+    $('flightbar').style.display = 'block'; $('card').style.display = 'none';
+    // the owl rides the line
+    if (owlRider) owlRider.remove();
+    owlRider = L.marker(pts[0], { icon: destIcon }).addTo(map);
+    let i = 0; clearInterval(rideTimer);
+    const step = Math.max(1, Math.floor(pts.length / 220));
+    rideTimer = setInterval(() => {
+      i += step;
+      if (i >= pts.length) { owlRider.setLatLng(pts[pts.length - 1]); clearInterval(rideTimer); toast('Touchdown. 🦉📍'); return; }
+      owlRider.setLatLng(pts[i]);
+    }, 90);
+  } catch { toast('The routing wind failed — connection? Try again.'); }
+}
+$('flybtn').onclick = flyRoute;
+$('cardfly').onclick = flyRoute;
+$('endflight').onclick = () => {
+  $('flightbar').style.display = 'none';
+  if (routeLine) { routeLine.remove(); routeLine = null; }
+  if (owlRider) { owlRider.remove(); owlRider = null; }
+  clearInterval(rideTimer);
+};
+
+/* ---------- controls ---------- */
+$('zin').onclick = () => map.zoomIn();
+$('zout').onclick = () => map.zoomOut();
+$('laybtn').onclick = () => { const l = $('layers'); l.style.display = l.style.display === 'block' ? 'none' : 'block'; };
+document.querySelectorAll('.lay').forEach(el => el.onclick = () => {
+  document.querySelectorAll('.lay').forEach(x => x.classList.remove('on'));
+  el.classList.add('on');
+  Object.values(layers).forEach(l => map.removeLayer(l));
+  layers[el.dataset.lay].addTo(map);
+  $('layers').style.display = 'none';
+});
+$('aboutbtn').onclick = () => $('about').style.display = 'flex';
+$('closeabout').onclick = () => $('about').style.display = 'none';
+$('about').addEventListener('click', e => { if (e.target.id === 'about') $('about').style.display = 'none'; });
+$('copycode').onclick = async () => {
+  try { await navigator.clipboard.writeText($('snippet').textContent); toast('Code copied — fly safe. 🦉'); }
+  catch { toast('Copy blocked — long-press the code to take it.'); }
+};
+
+findMe(false);
+setTimeout(() => toast('Welcome to Night Owl Maps, keeper. 🌕 Tap ◎ for your perch.'), 700);
+</script>
+</body>
+</html>
