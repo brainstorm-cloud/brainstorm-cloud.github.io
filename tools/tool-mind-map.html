@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="author" content="Brett Axl Goble">
+<title>Eve's Mind Map — think out loud, watch it grow · by Axl and Night Owl</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#070b16;color:#eaf2ff;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;padding:22px 16px 70px;
+    background-image:radial-gradient(rgba(110,168,255,.07) 1px,transparent 1.6px);background-size:10px 10px}
+  .wrap{max-width:760px;margin:0 auto}
+  h1{font-size:26px;line-height:1.25}.blue{color:#6ea8ff}
+  .sub{color:#a9c6f5;font-size:14px;line-height:1.55;margin-top:6px}
+  .panel{background:rgba(13,20,38,.94);border:1px solid rgba(110,168,255,.3);border-radius:18px;padding:16px;margin-top:16px}
+  .row{display:flex;gap:9px;margin-top:12px;flex-wrap:wrap}
+  .big{flex:1;border:0;border-radius:24px;padding:12px;font-size:15px;font-weight:700;cursor:pointer;min-width:120px}
+  .speak{background:linear-gradient(135deg,#2b6cff,#6ea8ff);color:#fff}
+  .ghostb{background:rgba(110,168,255,.13);color:#cfe4ff;border:1px solid rgba(110,168,255,.3)}
+  .danger{background:rgba(255,107,107,.16);color:#ffb3b3}
+  .big:active{transform:scale(.97)}
+  input[type=text]{flex:2;min-width:160px;background:#070b16;border:1px solid rgba(110,168,255,.35);border-radius:12px;color:#eaf2ff;padding:12px;font-size:16px;outline:none}
+  .chip{border:1px solid rgba(110,168,255,.35);background:rgba(110,168,255,.1);color:#cfe4ff;border-radius:20px;padding:8px 13px;font-size:13.5px;cursor:pointer;margin:4px 4px 0 0}
+  .chip.on{background:linear-gradient(135deg,#2b6cff,#6ea8ff);color:#fff;border-color:transparent}
+  .status{font-size:13.5px;color:#a9c6f5;margin-top:10px;min-height:18px}
+  .note{font-size:12.5px;color:#8fa8cc;line-height:1.5;margin-top:10px}
+  code{display:block;background:#070b16;border:1px solid rgba(110,168,255,.25);border-radius:10px;padding:10px 12px;font-size:12.5px;color:#9fd0ff;white-space:pre-wrap;margin-top:8px}
+  footer{margin-top:26px;text-align:center;color:#8fa8cc;font-size:13px;line-height:1.7}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🧠 Eve's Mind Map — <span class="blue">think out loud, watch it grow</span></h1>
+  <p class="sub">Start with one idea in the center. Grow branches, hang leaves, rearrange your whole head without touching a keyboard — or type, if your hands allow. The map saves itself on this device as you go.</p>
+
+  <div class="panel">
+    <div class="row" style="margin-top:0">
+      <input type="text" id="topic" placeholder="Center idea… e.g. My store launch">
+      <button class="big speak" id="newmap" style="flex:0 1 auto">🌱 New map</button>
+    </div>
+    <div id="stage" style="margin-top:12px"></div>
+    <div class="status" id="status">No map yet — name your center idea and plant it.</div>
+  </div>
+
+  <div class="panel">
+    <p class="sub" style="margin-top:0">🌿 <b>Grow it.</b> Type or dictate, then choose where it lands:</p>
+    <div class="row">
+      <input type="text" id="growth" placeholder="Branch or leaf name…">
+    </div>
+    <div class="row">
+      <button class="big ghostb" id="addbranch">➕ As a branch</button>
+      <button class="big ghostb" id="addleaf">🍃 As a leaf (on the picked branch)</button>
+    </div>
+    <div id="branches" style="margin-top:10px"></div>
+    <div class="row">
+      <button class="big speak" id="mic">🎙️ Say it instead</button>
+    </div>
+    <p class="note">Voice grammar: <i>"branch money"</i> · <i>"add testers to money"</i> · <i>"map: winter plan"</i> to start fresh. Tap a branch chip to pick where leaves land.</p>
+  </div>
+
+  <div class="panel">
+    <p class="sub" style="margin-top:0">📤 <b>Take it with you</b></p>
+    <div class="row">
+      <button class="big ghostb" id="dlsvg">⬇ Download the map (.svg)</button>
+      <button class="big ghostb" id="copyout">📋 Copy the outline</button>
+      <button class="big danger" id="clear">🗑 Clear the map</button>
+    </div>
+    <code id="outline" style="display:none"></code>
+    <p class="note"><b>Eve's twist:</b> mind maps usually lock your thoughts in somebody's subscription cloud. This one grows locally, saves on your device, and exports as a picture and a plain outline — your head belongs to you. Starter code below; every mock carries her snippet.</p>
+    <code>const map = { center: "My idea", branches: [{ name: "First branch", leaves: [] }] };
+// render it however you dream — the shape is yours.</code>
+  </div>
+
+  <footer>The Nest, by Brain Storm Cloud — ideas by <b>Axl, Jen, and Eve</b> · built by Axl and Night Owl 🦉</footer>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+let mapData = JSON.parse(localStorage.getItem('mindmap-app') || 'null');
+let picked = -1;
+function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+function save() { localStorage.setItem('mindmap-app', JSON.stringify(mapData)); render(); }
+
+function render() {
+  const stage = $('stage'), bl = $('branches');
+  if (!mapData) { stage.innerHTML = ''; bl.innerHTML = ''; return; }
+  const W = 720, cx = W / 2, rows = Math.max(mapData.branches.length, 1), H = 110 + rows * 70;
+  let g = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto" xmlns="http://www.w3.org/2000/svg">';
+  mapData.branches.forEach((b, i) => {
+    const y = 66 + i * 70, left = i % 2 === 0, bx = left ? 140 : W - 140;
+    g += '<line x1="' + cx + '" y1="' + (H / 2) + '" x2="' + bx + '" y2="' + y + '" stroke="#2b6cff" stroke-width="1.8" opacity=".7"/>';
+    g += '<rect x="' + (bx - 100) + '" y="' + (y - 19) + '" width="200" height="38" rx="19" fill="' + (i === picked ? '#12305e' : '#0e1830') + '" stroke="#6ea8ff" stroke-width="' + (i === picked ? 2.2 : 1) + '"/>';
+    g += '<text x="' + bx + '" y="' + (y + 5) + '" fill="#cfe4ff" font-size="14.5" text-anchor="middle">' + esc(b.name.slice(0, 28)) + '</text>';
+    b.leaves.forEach((lf, j) => {
+      g += '<text x="' + (left ? bx - 108 : bx + 108) + '" y="' + (y + 34 + j * 17) + '" fill="#8fa8cc" font-size="12.5" text-anchor="' + (left ? 'end' : 'start') + '">• ' + esc(lf.slice(0, 30)) + '</text>';
+    });
+  });
+  g += '<rect x="' + (cx - 120) + '" y="' + (H / 2 - 25) + '" width="240" height="50" rx="25" fill="#12305e" stroke="#6ea8ff" stroke-width="1.8"/>';
+  g += '<text x="' + cx + '" y="' + (H / 2 + 7) + '" fill="#eaf2ff" font-size="16.5" font-weight="700" text-anchor="middle">🦉 ' + esc(mapData.center.slice(0, 26)) + '</text></svg>';
+  stage.innerHTML = g;
+  stage.dataset.svg = g;
+  bl.innerHTML = mapData.branches.map((b, i) => '<button class="chip' + (i === picked ? ' on' : '') + '" onclick="pick(' + i + ')">' + esc(b.name) + ' (' + b.leaves.length + ')</button>').join('') || '<span class="note">No branches yet.</span>';
+  $('status').textContent = 'Center: ' + mapData.center + ' · ' + mapData.branches.length + ' branches · ' + mapData.branches.reduce((n, b) => n + b.leaves.length, 0) + ' leaves — saved on this device.';
+}
+window.pick = i => { picked = i; render(); };
+$('newmap').onclick = () => {
+  const t = $('topic').value.trim();
+  if (!t) { $('status').textContent = 'Name the center idea first.'; return; }
+  mapData = { center: t, branches: [] }; picked = -1; $('topic').value = ''; save();
+};
+$('addbranch').onclick = () => {
+  const v = $('growth').value.trim();
+  if (!mapData) { $('status').textContent = 'Plant the center idea first.'; return; }
+  if (!v) { $('status').textContent = 'Type or say the branch name first.'; return; }
+  mapData.branches.push({ name: v, leaves: [] }); picked = mapData.branches.length - 1; $('growth').value = ''; save();
+};
+$('addleaf').onclick = () => {
+  const v = $('growth').value.trim();
+  if (!mapData || picked < 0) { $('status').textContent = 'Pick a branch first (tap its chip), then add the leaf.'; return; }
+  if (!v) { $('status').textContent = 'Type or say the leaf name first.'; return; }
+  mapData.branches[picked].leaves.push(v); $('growth').value = ''; save();
+};
+function outline() {
+  if (!mapData) return '';
+  return mapData.center + '\n' + mapData.branches.map(b => '├─ ' + b.name + b.leaves.map(l => '\n│   • ' + l).join('')).join('\n');
+}
+$('copyout').onclick = async () => {
+  const o = outline(); if (!o) return;
+  $('outline').style.display = 'block'; $('outline').textContent = o;
+  try { await navigator.clipboard.writeText(o); $('status').textContent = 'Outline copied.'; } catch { $('status').textContent = 'Outline shown — long-press to take it.'; }
+};
+$('dlsvg').onclick = () => {
+  const g = $('stage').dataset.svg; if (!g) return;
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([g], { type: 'image/svg+xml' }));
+  a.download = 'mind-map.svg'; a.click();
+};
+$('clear').onclick = () => { mapData = null; picked = -1; localStorage.removeItem('mindmap-app'); render(); $('status').textContent = 'Cleared. The grove is ready for a new tree.'; };
+
+/* voice */
+$('mic').onclick = () => {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { $('status').textContent = 'This browser has no ears — Chrome carries the hearing.'; return; }
+  const r = new SR(); r.lang = 'en-US';
+  $('status').textContent = '👂 Listening… say "branch money", "add testers to money", or "map: winter plan".';
+  r.onresult = e => {
+    const said = e.results[0][0].transcript, t = said.toLowerCase();
+    let m = t.match(/^map[:\s]+(.+)/i);
+    if (m) { mapData = { center: said.replace(/^map[:\s]+/i, ''), branches: [] }; picked = -1; save(); return; }
+    m = t.match(/^branch[:\s]+(.+)/i);
+    if (m && mapData) { mapData.branches.push({ name: m[1], leaves: [] }); picked = mapData.branches.length - 1; save(); return; }
+    m = t.match(/^add (.+?) to (.+)$/i);
+    if (m && mapData) {
+      const b = mapData.branches.find(x => x.name.toLowerCase() === m[2].trim().toLowerCase());
+      if (b) { b.leaves.push(m[1]); save(); return; }
+    }
+    $('growth').value = said;
+    $('status').textContent = 'Heard: "' + said + '" — it is in the box; tap branch or leaf to plant it.';
+  };
+  r.onerror = () => { $('status').textContent = 'Ears blinked — try the mic again, or type it.'; };
+  try { r.start(); } catch {}
+};
+render();
+</script>
+</body>
+</html>
