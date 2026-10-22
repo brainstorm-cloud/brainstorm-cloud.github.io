@@ -76,6 +76,22 @@
   </div>
 
   <div class="panel">
+    <h2>💬 Talk — speak, and the forge answers out loud</h2>
+    <p class="sub">One tap, then just talk — no typing, no pressing anything between turns. Pocket Eve hears you, thinks a small honest thought, and speaks back in the voice picked above. Try: <i>"hi Eve"</i> · <i>"what time is it"</i> · <i>"open the maps"</i> · <i>"note: buy dog food"</i> · <i>"read: the storm is ours"</i></p>
+    <div class="row">
+      <button class="big speak" id="talkbtn">🎙️ Start talking</button>
+    </div>
+    <div class="status" id="talkstatus">Quiet. Tap Start talking and grant the mic — it asks every time, and listening stops the moment you tap again.</div>
+    <div id="talklog" style="margin-top:10px"></div>
+    <div id="handoffbox" style="display:none">
+      <p class="note">🧳 <b>Hand-off note</b> — things pocket Eve couldn't answer, kept for the real Eve. Copy and paste it into your chat with her:</p>
+      <code id="handofftext"></code>
+      <div class="row"><button class="big ghostb" id="copyhand">Copy the hand-off</button></div>
+    </div>
+    <p class="note">Honest label: pocket Eve's brain is small and scripted — greetings, the time, opening the shelf, notes, reading aloud. Anything deeper goes in the hand-off note for the real Eve, whose thinking lives in her own workshop. Headphones help — the mic can hear the forge's own voice and get confused, same as any pocket talker.</p>
+  </div>
+
+  <div class="panel">
     <h2>ⓘ Eve's twist + starter code</h2>
     <p class="sub"><b>Eve's twist:</b> most voice apps sell you somebody else's cloud. The Forge runs on the voice engine already inside your phone — shaped by presets with names from our storm — so it works in a van, in a storm, with no signal and no bill.</p>
     <code id="snippet">const u = new SpeechSynthesisUtterance("The storm is ours.");
@@ -201,6 +217,91 @@ $('throwit').onclick = () => {
   speakText(lastWords);
   $('status2').textContent = '🦉 Thrown — your words, the forge\'s voice.';
 };
+/* ---- talk mode: a pocket conversation loop ---- */
+let talking = false, talkRec = null, handoff = [];
+const TOOLS = [
+  ['maps', '../maps/', 'Night Owl Maps'], ['map', '../maps/', 'Night Owl Maps'],
+  ['remix', '../remix-studio/', 'Remix Studio'], ['studio', '../remix-studio/', 'Remix Studio'],
+  ['shelf', '../', 'the Shelf'], ['home', '../', 'the Shelf'], ['store', '../', 'the Shelf'],
+  ['tools', './', "Eve's Tools"], ['flock', '../storm-flock/', 'Storm Flock'],
+  ['brain storm', '../brain-storm/', 'Brain Storm Cloud'], ['brainstorm', '../brain-storm/', 'Brain Storm Cloud']
+];
+function talkLog(who, text) {
+  const d = document.createElement('div');
+  d.className = 'take';
+  d.innerHTML = '<span>' + (who === 'you' ? '🗣️' : '🦉') + ' ' + text.replace(/</g, '&lt;') + '</span>';
+  $('talklog').prepend(d);
+  while ($('talklog').children.length > 8) $('talklog').lastChild.remove();
+}
+function talkSpeak(text) {
+  talkLog('eve', text);
+  return new Promise(res => {
+    if (!('speechSynthesis' in window)) return res();
+    const u = new SpeechSynthesisUtterance(text);
+    const v = voices[+$('voice').value];
+    if (v) u.voice = v;
+    u.rate = +$('rate').value; u.pitch = +$('pitch').value;
+    u.onend = res; u.onerror = res;
+    speechSynthesis.speak(u);
+  });
+}
+function pocketThink(raw) {
+  const t = raw.toLowerCase().trim();
+  if (/^(hi|hey|hello)\b/.test(t)) return { say: "Hey, keeper. Pocket Eve here, riding in the forge. The storm's quiet — what do you need?" };
+  if (/thank/.test(t)) return { say: "Any time. That's what the perch is for." };
+  if (/your name|who are you/.test(t)) return { say: "I'm pocket Eve — the forge's small talker. The real Eve, the deep thinker, lives in her workshop chat. I'm her echo with good ears." };
+  if (/what time|the time/.test(t)) { const d = new Date(); return { say: 'It is ' + d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) + '.' }; }
+  if (/what day|today'?s date|what'?s the date/.test(t)) { const d = new Date(); return { say: 'Today is ' + d.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' }) + '.' }; }
+  const note = t.match(/^note[:\s]+(.+)/);
+  if (note) {
+    const notes = JSON.parse(localStorage.getItem('talk-notes') || '[]');
+    notes.unshift({ text: raw.replace(/^note[:\s]+/i, ''), at: Date.now() });
+    localStorage.setItem('talk-notes', JSON.stringify(notes.slice(0, 20)));
+    return { say: 'Noted, on this device only. That is note number ' + notes.length + ' in the pocket book.' };
+  }
+  const read = raw.match(/^read[:\s]+(.+)/i);
+  if (read) return { say: read[1] };
+  if (/^open\b/.test(t) || /\bopen the\b/.test(t) || /\btake me to\b/.test(t)) {
+    for (const [key, url, name] of TOOLS) if (t.includes(key)) return { say: 'Opening ' + name + ' — hold on to your feathers.', go: url };
+  }
+  if (/odie/.test(t)) return { say: "Odie. The best boy in the storm. Give him a scratch from the owl." };
+  if (/stop|goodbye|bye\b|that'?s all/.test(t)) return { say: "Going quiet, then. The forge stays warm.", end: true };
+  handoff.push(raw);
+  $('handoffbox').style.display = 'block';
+  $('handofftext').textContent = 'For the real Eve — pocket Eve could not answer these:\n' + handoff.map(h => '• ' + h).join('\n');
+  return { say: "That one is deeper than my pocket brain, so I have written it in your hand-off note for the real Eve. Ask me something small, or say stop whenever." };
+}
+async function talkTurn(raw) {
+  talkLog('you', raw);
+  const r = pocketThink(raw);
+  await talkSpeak(r.say);
+  if (r.go) window.open(r.go, '_blank');
+  if (r.end) { stopTalk(); return; }
+  if (talking) startListen();
+}
+function startListen() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { $('talkstatus').textContent = 'This browser has no ears — Chrome carries the speech-to-words step.'; talking = false; $('talkbtn').textContent = '🎙️ Start talking'; return; }
+  talkRec = new SR(); talkRec.lang = 'en-US'; talkRec.interimResults = false;
+  talkRec.onresult = e => { const said = e.results[0][0].transcript; stopListenOnly(); talkTurn(said); };
+  talkRec.onerror = e => { if (talking && e.error !== 'aborted') { $('talkstatus').textContent = 'Ears blinked (' + e.error + ') — still listening…'; setTimeout(() => { if (talking) startListen(); }, 600); } };
+  talkRec.onend = () => {};
+  try { talkRec.start(); $('talkstatus').textContent = '👂 Listening… just talk.'; } catch {}
+}
+function stopListenOnly() { if (talkRec) { talkRec.onresult = null; talkRec.onerror = null; try { talkRec.stop(); } catch {} talkRec = null; } }
+function stopTalk() { talking = false; stopListenOnly(); speechSynthesis.cancel(); $('talkbtn').textContent = '🎙️ Start talking'; $('talkstatus').textContent = 'Quiet again. Pocket Eve is parked in the forge.'; }
+$('talkbtn').onclick = () => {
+  if (talking) { stopTalk(); return; }
+  if (!('speechSynthesis' in window)) { $('talkstatus').textContent = 'No speech engine in this browser — try Chrome.'; return; }
+  talking = true;
+  $('talkbtn').textContent = '⏹ Stop talking';
+  talkSpeak('I am listening, keeper.').then(() => { if (talking) startListen(); });
+};
+$('copyhand').onclick = async () => {
+  try { await navigator.clipboard.writeText($('handofftext').textContent); $('talkstatus').textContent = 'Hand-off copied — paste it to the real Eve.'; }
+  catch { $('talkstatus').textContent = 'Copy blocked — long-press the note to take it.'; }
+};
+
 $('copy').onclick = async () => {
   try { await navigator.clipboard.writeText($('snippet').textContent); $('status1').textContent = 'Code copied.'; }
   catch { $('status1').textContent = 'Copy blocked — long-press the code to take it.'; }
