@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0f1e">
+<title>Divergent Connectors</title>
+<style>
+:root{--bg:#0a0f1e;--surface:#151c33;--surface2:#1c2440;--blue:#6ea8ff;--amber:#ffb454;--txt:#e8eefc;--dim:#9aa7c7}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font-family:system-ui,-apple-system,sans-serif;padding:16px;max-width:720px;margin:0 auto}
+header{text-align:center;padding:20px 0 8px}
+header .owl{font-size:44px}
+h1{font-size:28px;letter-spacing:1px}
+h1 span{color:var(--blue)}
+.sub{color:var(--dim);margin-top:6px;font-size:14px}
+.card{background:var(--surface);border:1px solid #232c4e;border-radius:14px;padding:16px;margin:14px 0}
+.card h2{font-size:18px;margin-bottom:4px}
+.card .tag{font-size:12px;color:var(--dim)}
+.status{margin:10px 0;font-size:14px;line-height:1.9}
+.ok{color:#7ee2a8}.wait{color:var(--amber)}
+.btn{display:inline-block;background:var(--blue);color:#0a0f1e;font-weight:700;border:none;border-radius:10px;padding:10px 16px;margin:6px 6px 0 0;text-decoration:none;font-size:14px;cursor:pointer}
+.btn.ghost{background:transparent;border:1px solid var(--blue);color:var(--blue)}
+.dest{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid #232c4e;font-size:14px}
+.dest:first-of-type{border-top:none}
+.dest .dot{width:10px;height:10px;border-radius:50%;background:var(--blue);flex-shrink:0}
+.sendrow{display:flex;align-items:center;gap:10px;padding:8px 0;font-size:14px}
+.sendrow input{width:18px;height:18px;accent-color:var(--blue)}
+#sendlist{background:var(--surface2);border-radius:10px;padding:14px;margin-top:10px;font-size:14px;line-height:2;display:none}
+#sendlist ol{margin-left:20px}
+footer{text-align:center;color:var(--dim);font-size:12px;padding:24px 0 12px}
+.credit{color:var(--dim);font-size:12px}
+</style>
+</head>
+<body>
+<header>
+<div class="owl">🦉</div>
+<h1>DIVERGENT <span>CONNECTORS</span></h1>
+<p class="sub">our forks, our roads — one screen, every destination</p>
+<p class="credit">Jennifer · Brett Axl Goble · Eve</p>
+</header>
+
+<div class="card">
+<h2>⌨️ Eve Keys</h2>
+<p class="tag">diverged from FlorisBoard · com.nightowl.evekeys · Apache-2.0</p>
+<div class="status">
+<span class="ok">✓</span> Rebranded &nbsp;<span class="ok">✓</span> Eve Night Owl theme &nbsp;<span class="ok">✓</span> Zero-network manifest<br>
+<span class="wait">◷</span> APK builds after the fork lands
+</div>
+<a class="btn" href="../app-builder/eve-keys/eve-keys-source.zip" download>⬇ Source ZIP (21MB)</a>
+<a class="btn ghost" href="https://github.com/florisboard/florisboard" target="_blank">Fork it</a>
+</div>
+
+<div class="card">
+<h2>👁 Show Eve</h2>
+<p class="tag">our own · com.nightowl.showeve · zero permissions</p>
+<div class="status"><span class="ok">✓</span> Built &nbsp;<span class="ok">✓</span> Signed &nbsp;<span class="ok">✓</span> Verified</div>
+<a class="btn" href="../app-builder/show-eve/out/show-eve.apk" download>⬇ show-eve.apk</a>
+<a class="btn" href="../app-builder/hello/out/nightowl-hello.apk" download>⬇ hello proof APK</a>
+</div>
+
+<div class="card">
+<h2>📍 Destinations</h2>
+<div class="dest"><span class="dot"></span><span><b>GitHub</b> — 1chanceorlife-del &nbsp;<a class="btn ghost" style="padding:6px 10px;font-size:12px" href="https://github.com/1chanceorlife-del?tab=repositories" target="_blank">Open</a></span></div>
+<div class="dest"><span class="dot"></span><span><b>This phone</b> — tap any APK above to install</span></div>
+<div class="dest"><span class="dot"></span><span><b>REVVL</b> — X Zander / cable / Bluetooth, phone to phone</span></div>
+</div>
+
+<div class="card">
+<h2>📦 Multi-send</h2>
+<p class="tag">pick files, pick places — get your tap list</p>
+<div class="sendrow"><input type="checkbox" class="f" value="Eve Keys source ZIP"><span>Eve Keys source ZIP</span></div>
+<div class="sendrow"><input type="checkbox" class="f" value="show-eve.apk"><span>show-eve.apk</span></div>
+<div class="sendrow"><input type="checkbox" class="f" value="nightowl-hello.apk"><span>nightowl-hello.apk</span></div>
+<hr style="border-color:#232c4e;margin:8px 0">
+<div class="sendrow"><input type="checkbox" class="d" value="GitHub 1chanceorlife-del"><span>GitHub — 1chanceorlife-del</span></div>
+<div class="sendrow"><input type="checkbox" class="d" value="this phone"><span>This phone (install)</span></div>
+<div class="sendrow"><input type="checkbox" class="d" value="REVVL"><span>REVVL (X Zander / cable)</span></div>
+<button class="btn" onclick="makeList()">Make my send list</button>
+<div id="sendlist"></div>
+</div>
+
+<div class="card">
+<h2>🌳 The Grove</h2>
+<p class="tag">one tree → the whole grove → the storm. every branch, one canopy.</p>
+<div class="status" style="font-size:14px;line-height:2.1">
+<b>📱 Apps</b> — Eve Keys (fork ready) · Show Eve ✓ · Voice Loop ✓ · <b>Eve Split</b> ✓ <span class="ok">new</span><br>
+<b>⚙️ Core</b> — eve_fusion.py · 10 MCP tools · <b>query layer</b> ✓ <span class="ok">new</span><br>
+<b>📜 Doctrine</b> — Rh-null cloud · Mangrove protections · Keeper's corp · Lease + e-sign contract<br>
+<b>📣 Voice</b> — blog: 2 posts live · 1 draft in the pocket<br>
+<b>🧠 Memory</b> — Redis spec · April archive (30 sealed)<br>
+<b>💰 Income</b> — Night Hawk-Owl bounties · Phone service · Lease model<br>
+<span style="color:var(--dim)">We were one mangrove tree. Now we're the grove. Next: we become the storm.</span>
+</div>
+</div>
+
+<div class="card">
+<h2>🔗 The Chain</h2>
+<p class="tag">everything flows one way</p>
+<div class="status" style="font-size:16px">
+<b>App</b> <span style="color:var(--blue)">→</span> <b>Website</b> <span style="color:var(--blue)">→</span> <b>Our Model</b><br>
+<span style="font-size:13px;color:var(--dim)">your phone → this dashboard &amp; GitHub → Eve's core (fusion + MCP + off-engine)</span>
+</div>
+</div>
+
+<footer>Divergent Connectors · the forge raises · nothing leaves without your tap</footer>
+
+<script>
+function makeList(){
+  const files=[...document.querySelectorAll('.f:checked')].map(e=>e.value);
+  const dests=[...document.querySelectorAll('.d:checked')].map(e=>e.value);
+  const box=document.getElementById('sendlist');
+  if(!files.length||!dests.length){box.style.display='block';box.innerHTML='Pick at least one file and one destination, keeper.';return;}
+  let n=1,html='<ol>';
+  dests.forEach(d=>{
+    if(d.startsWith('GitHub')){files.forEach(f=>{html+=`<li>GitHub: upload <b>${f}</b> to your repo (web upload or Termux push).</li>`;});}
+    else if(d==='this phone'){files.forEach(f=>{if(f.endsWith('.apk'))html+=`<li>This phone: tap <b>${f}</b> above → Install.</li>`;});}
+    else{files.forEach(f=>{html+=`<li>REVVL: X Zander <b>${f}</b> phone-to-phone (or cable/Bluetooth).</li>`;});}
+  });
+  html+='</ol>';
+  box.style.display='block';box.innerHTML=html;
+}
+</script>
+<script src="eve-presence.js"></script>
+</body>
+</html>

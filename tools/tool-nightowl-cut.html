@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="author" content="Brett Axl Goble">
+<title>Night Owl Cut — Photo to Video Maker</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 20px; background: #000; color: #e8e8e8; min-height: 100vh; }
+  .wrap { max-width: 640px; margin: 0 auto; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .sub { color: #8aa0c8; font-size: 13px; margin: 0 0 16px; }
+  .card { background: #101418; border: 1px solid #2a3542; border-radius: 12px; padding: 14px; margin-bottom: 12px; }
+  .card h2 { font-size: 13px; color: #8aa0c8; margin: 0 0 8px; text-transform: uppercase; letter-spacing: 1px; }
+  label.file { display: block; padding: 14px; border: 2px dashed #2a3542; border-radius: 8px; text-align: center; cursor: pointer; color: #8aa0c8; }
+  input[type=file] { display: none; }
+  #thumbs { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  #thumbs img { width: 64px; height: 113px; object-fit: cover; border-radius: 6px; border: 1px solid #2a3542; }
+  .row { display: flex; gap: 10px; align-items: center; margin-top: 10px; }
+  .row label { font-size: 14px; color: #8aa0c8; flex: 1; }
+  input[type=number] { width: 70px; padding: 8px; background: #000; color: #fff; border: 1px solid #2a3542; border-radius: 6px; }
+  #preview { width: 100%; max-width: 270px; aspect-ratio: 9/16; background: #000; border-radius: 8px; display: block; margin: 0 auto; border: 1px solid #2a3542; }
+  .btn { display: block; width: 100%; padding: 14px; border-radius: 8px; border: none; cursor: pointer; font-weight: 700; font-size: 16px; margin-top: 10px; }
+  .make { background: #5a82d2; color: #fff; }
+  .make:disabled { background: #2a3542; color: #666; }
+  #dl { background: #1a7a3a; color: #fff; text-decoration: none; text-align: center; display: none; }
+  #status { text-align: center; color: #8aa0c8; font-size: 14px; min-height: 20px; margin-top: 10px; }
+  .note { font-size: 12px; color: #666; text-align: center; margin-top: 16px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🦉 Night Owl Cut</h1>
+  <p class="sub">Photos + music in. Video out. Your cut, your edit, your maker.</p>
+
+  <div class="card">
+    <h2>1 · Photos</h2>
+    <label class="file" for="photos">📷 Tap to pick photos</label>
+    <input type="file" id="photos" accept="image/*" multiple>
+    <div id="thumbs"></div>
+  </div>
+
+  <div class="card">
+    <h2>2 · Music / Audio</h2>
+    <label class="file" for="audio">🎵 Tap to pick music or voice</label>
+    <input type="file" id="audio" accept="audio/*">
+    <div id="audioName" class="sub" style="margin:8px 0 0"></div>
+  </div>
+
+  <div class="card">
+    <h2>3 · Cut</h2>
+    <div class="row"><label>Seconds per photo</label><input type="number" id="secs" value="3" min="1" max="10"></div>
+    <canvas id="preview" width="720" height="1280"></canvas>
+    <button class="btn make" id="makeBtn" disabled>🎬 Make the video</button>
+    <a class="btn" id="dl">⬇ Download video</a>
+    <div id="status"></div>
+  </div>
+  <p class="note">Runs 100% on your phone. Nothing uploads anywhere.</p>
+</div>
+
+<script>
+const photosInput = document.getElementById('photos');
+const audioInput = document.getElementById('audio');
+const thumbs = document.getElementById('thumbs');
+const audioName = document.getElementById('audioName');
+const secsInput = document.getElementById('secs');
+const canvas = document.getElementById('preview');
+const ctx = canvas.getContext('2d');
+const makeBtn = document.getElementById('makeBtn');
+const dl = document.getElementById('dl');
+const status = document.getElementById('status');
+let imgs = [], audioURL = null, audioEl = null;
+
+function drawCover(img) {
+  const cw = canvas.width, ch = canvas.height;
+  const s = Math.max(cw / img.width, ch / img.height);
+  const w = img.width * s, h = img.height * s;
+  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, cw, ch);
+  ctx.drawImage(img, (cw - w) / 2, (ch - h) / 2, w, h);
+}
+
+photosInput.onchange = () => {
+  imgs = []; thumbs.innerHTML = '';
+  const files = [...photosInput.files];
+  if (!files.length) { check(); return; }
+  let loaded = 0;
+  files.forEach(f => {
+    const img = new Image();
+    img.onload = () => {
+      imgs.push(img);
+      const t = document.createElement('img'); t.src = img.src; thumbs.appendChild(t);
+      if (++loaded === files.length) { drawCover(imgs[0]); check(); }
+    };
+    img.src = URL.createObjectURL(f);
+  });
+};
+
+audioInput.onchange = () => {
+  const f = audioInput.files[0];
+  if (!f) { check(); return; }
+  audioURL = URL.createObjectURL(f);
+  audioName.textContent = '🎵 ' + f.name;
+  if (audioEl) audioEl.pause();
+  audioEl = new Audio(audioURL);
+  check();
+};
+
+function check() { makeBtn.disabled = !(imgs.length && audioEl); }
+
+makeBtn.onclick = async () => {
+  makeBtn.disabled = true; dl.style.display = 'none';
+  status.textContent = 'Cutting…';
+  const perPhoto = Math.max(1, Math.min(10, +secsInput.value || 3));
+
+  // Build one long playlist image list to cover the audio
+  await new Promise(res => {
+    const probe = new Audio(audioURL);
+    probe.onloadedmetadata = () => res(probe.duration);
+    probe.onerror = () => res(10);
+  }).then(dur => { window._dur = dur || 10; });
+  const total = window._dur;
+  const seq = [];
+  for (let t = 0; t < total; t += perPhoto) seq.push(imgs[Math.floor(t / perPhoto) % imgs.length]);
+
+  // Play slideshow on canvas in real time while recording
+  const stream = canvas.captureStream(30);
+  // mix in the audio
+  const AC = window.AudioContext || window.webkitAudioContext;
+  const ac = new AC();
+  const src = ac.createMediaElementSource(audioEl);
+  const dest = ac.createMediaStreamDestination();
+  src.connect(dest); src.connect(ac.destination);
+  dest.stream.getAudioTracks().forEach(tr => stream.addTrack(tr));
+
+  const mime = MediaRecorder.isTypeSupported('video/mp4') ? 'video/mp4' : 'video/webm';
+  const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 5_000_000 });
+  const chunks = [];
+  rec.ondataavailable = e => e.data.size && chunks.push(e.data);
+  const done = new Promise(r => rec.onstop = r);
+
+  audioEl.currentTime = 0;
+  await audioEl.play().catch(() => { status.textContent = 'Tap play on the audio first, then retry.'; makeBtn.disabled = false; throw 0; });
+  rec.start();
+  status.textContent = 'Recording your cut…';
+
+  const start = performance.now();
+  await new Promise(resolve => {
+    function frame(now) {
+      const el = (now - start) / 1000;
+      if (el >= total || audioEl.ended) return resolve();
+      drawCover(seq[Math.min(seq.length - 1, Math.floor(el / perPhoto))]);
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  });
+
+  rec.stop(); audioEl.pause();
+  await done;
+  const blob = new Blob(chunks, { type: mime });
+  const url = URL.createObjectURL(blob);
+  const ext = mime === 'video/mp4' ? 'mp4' : 'webm';
+  dl.href = url; dl.download = 'nightowl-cut.' + ext;
+  dl.textContent = '⬇ Download video (.' + ext + ')';
+  dl.style.display = 'block';
+  status.textContent = 'Done — your cut is ready.';
+  makeBtn.disabled = false;
+};
+</script>
+<script src="eve-presence.js"></script>
+</body>
+</html>

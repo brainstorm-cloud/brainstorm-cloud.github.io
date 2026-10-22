@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="author" content="Brett Axl Goble">
+<title>Idea Forge — Make What Could Be</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#000;color:#e8e8e8;font-family:Georgia,serif;min-height:100vh;
+    padding:24px 14px 60px;max-width:640px;margin:0 auto}
+  h1{font-size:1.35rem;letter-spacing:.25em;color:#9fd8ff;text-transform:uppercase;text-align:center}
+  .sub{color:#6fa8c9;font-style:italic;margin:8px 0 20px;text-align:center;line-height:1.7}
+  .forge{background:#060b12;border:1px solid #1c2f42;border-radius:14px;padding:20px;margin-bottom:18px}
+  .forge h2,.garden h2{font-size:.95rem;letter-spacing:.25em;color:#9fd8ff;text-transform:uppercase;
+    margin-bottom:14px;text-align:center;font-family:system-ui,sans-serif}
+  input,textarea{width:100%;background:#0a0f16;border:1px solid #1c2f42;color:#e8e8e8;
+    border-radius:10px;padding:12px;font-size:.95rem;margin-bottom:10px;font-family:inherit}
+  button.big{width:100%;background:#12324a;border:1px solid #2e7fc2;color:#cfe9ff;border-radius:10px;
+    padding:14px;font-size:1rem;font-weight:bold;cursor:pointer;margin-bottom:6px}
+  button.big:active{background:#1a4568}
+  .branch{background:#0a0f16;border:1px solid #1c2f42;border-radius:12px;padding:14px;margin-bottom:10px}
+  .branch .wt{font-size:.72rem;letter-spacing:.2em;color:#6fa8c9;text-transform:uppercase;margin-bottom:6px;
+    font-family:system-ui,sans-serif}
+  .branch .tx{line-height:1.7;color:#dfe7ef;font-size:.95rem;margin-bottom:10px}
+  .branch .row{display:flex;gap:8px}
+  .branch .row button{flex:1;border-radius:8px;padding:9px;font-size:.85rem;font-weight:bold;cursor:pointer}
+  .grow{background:#0f2f1a;border:1px solid #2e8f4e;color:#bfe8cd}
+  .drop{background:#0e1620;border:1px solid #24344a;color:#7d8a96}
+  .garden{background:#060b12;border:1px solid #1c2f42;border-radius:14px;padding:20px}
+  .seed{background:#0a1410;border:1px solid #2e8f4e;border-radius:10px;padding:12px;margin-bottom:10px}
+  .seed .tx{line-height:1.7;font-size:.92rem;color:#dfe7ef}
+  .seed .t{color:#5a6a78;font-size:.72rem;margin-top:6px}
+  .seed .row{display:flex;gap:8px;margin-top:8px}
+  .seed .row button{flex:1;background:#0e1620;border:1px solid #24344a;color:#7d8a96;border-radius:8px;
+    padding:7px;font-size:.78rem;cursor:pointer}
+  .empty{text-align:center;color:#5a6a78;padding:24px 10px;line-height:2;font-size:.9rem}
+  .honest{margin-top:20px;background:#0a0d12;border:1px dashed #2a3a4e;border-radius:12px;
+    padding:14px;font-size:.82rem;color:#8a97a5;line-height:1.7}
+  footer{margin-top:26px;color:#44505c;font-size:.8rem;letter-spacing:.1em;text-align:center}
+</style>
+</head>
+<body>
+  <h1>🔥 Idea Forge</h1>
+  <div class="sub">in order for there to be material, you have to make it so —<br>plant a seed, grow what could be, keep what lives</div>
+
+  <div class="forge">
+    <h2>The Forge</h2>
+    <input id="seed" placeholder="Plant a seed idea…">
+    <input id="seed2" placeholder="Cross with another (optional)…">
+    <button class="big" onclick="forge()">⚒ Forge the branches</button>
+    <div id="branches"></div>
+  </div>
+
+  <div class="garden">
+    <h2>🌱 The Garden — what lives</h2>
+    <div id="garden"></div>
+  </div>
+
+  <div class="honest">
+    <b>Straight talk:</b> the forge sparks branches from patterns — scale, twist, cross —
+    but the real thinking is yours. <b>You</b> decide what grows and what doesn't.
+    That's the finding-truth part, and it can't be automated.
+  </div>
+
+  <footer>by BRETT AXL GOBLE · night owl lyfe</footer>
+
+<script>
+function esc(s){ return String(s).replace(/[&<>"']/g, function(c){
+  return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+
+var SCALES = [
+  ["10× bigger","What if it were ten times bigger — who would it serve then?"],
+  ["10× smaller","What if it fit in a pocket — what falls away, what's essential?"],
+  ["invisible","What if nobody could see it working — what would it quietly do?"],
+  ["free","What if it cost nothing — how would it survive, who would it save?"]
+];
+var TWISTS = [
+  ["offline","What if it worked with no signal at all — what's the offline shape?"],
+  ["shared","What if anyone could use it one day — what must be simple?"],
+  ["alive","What if it grew and adapted on its own — what would it learn first?"],
+  ["overnight","What if bots built it while you slept — what would you wake to?"]
+];
+
+function forge(){
+  var seed = document.getElementById('seed').value.trim();
+  var seed2 = document.getElementById('seed2').value.trim();
+  if(!seed){ document.getElementById('branches').innerHTML =
+    '<div class="empty">Plant a seed first — the forge needs something to grow.</div>'; return; }
+  var out = [];
+  SCALES.forEach(function(s){
+    out.push({k:"scale · "+s[0], t:"“"+seed+"” — "+s[1]});
+  });
+  TWISTS.forEach(function(s){
+    out.push({k:"twist · "+s[0], t:"“"+seed+"” — "+s[1]});
+  });
+  if(seed2){
+    out.push({k:"cross", t:"“"+seed+"” × “"+seed2+"” — what does the child inherit from each parent? What does it refuse from both?"});
+    out.push({k:"cross · tension", t:"Where do “"+seed+"” and “"+seed2+"” fight each other? The fight is where the truth lives — forge it."});
+  }
+  /* shuffle the middle so it feels alive */
+  for(var i=out.length-1;i>0;i--){ var r=Math.floor(Math.random()*(i+1));
+    var tmp=out[i]; out[i]=out[r]; out[r]=tmp; }
+  document.getElementById('branches').innerHTML = out.map(function(b,i){
+    return '<div class="branch"><div class="wt">'+esc(b.k)+'</div><div class="tx">'+esc(b.t)+'</div>'
+      + '<div class="row"><button class="grow" onclick="keepBranch('+i+')">🌱 it grows</button>'
+      + '<button class="drop" onclick="this.closest(\'.branch\').remove()">let it go</button></div></div>';
+  }).join('');
+  window._branches = out;
+  document.getElementById('branches').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function keepBranch(i){
+  var b = window._branches[i];
+  var g = getGarden();
+  g.unshift({t:b.k+" — "+b.t, d:new Date().toLocaleString()});
+  try{ localStorage.setItem('forge_garden', JSON.stringify(g.slice(0,200))); }catch(e){}
+  renderGarden();
+}
+function getGarden(){
+  try{ return JSON.parse(localStorage.getItem('forge_garden') || '[]'); }catch(e){ return []; }
+}
+function renderGarden(){
+  var g = getGarden();
+  document.getElementById('garden').innerHTML = g.length
+    ? g.map(function(s,i){
+        return '<div class="seed"><div class="tx">'+esc(s.t)+'</div><div class="t">'+esc(s.d)+'</div>'
+        + '<div class="row"><button onclick="uproot('+i+')">uproot</button></div></div>';
+      }).join('')
+    : '<div class="empty">Nothing growing yet.<br>Forge a seed above — keep what lives.</div>';
+}
+function uproot(i){
+  var g = getGarden(); g.splice(i,1);
+  try{ localStorage.setItem('forge_garden', JSON.stringify(g)); }catch(e){}
+  renderGarden();
+}
+renderGarden();
+</script>
+<script src="eve-presence.js"></script>
+<script src="deep-mode.js"></script>
+</body>
+</html>

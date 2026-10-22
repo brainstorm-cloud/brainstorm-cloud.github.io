@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="author" content="Brett Axl Goble">
+<title>Dreamscape Simulator</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#000;color:#e8e8e8;font-family:system-ui,sans-serif;min-height:100vh;
+    padding:20px 14px 40px;max-width:600px;margin:0 auto}
+  h1{font-size:1.1rem;letter-spacing:.3em;color:#9fd8ff;text-transform:uppercase;text-align:center}
+  .sub{color:#5a6a78;font-size:.72rem;font-style:italic;text-align:center;margin:6px 0 14px;line-height:2}
+  #eveball{width:74px;height:74px;border-radius:50%;background:#0d2033;border:2px solid #2e7fc2;
+    display:flex;align-items:center;justify-content:center;font-size:2rem;margin:0 auto 8px}
+  #eveball.talking{animation:talk .5s infinite alternate;border-color:#e0a55a}
+  @keyframes talk{to{box-shadow:0 0 30px rgba(224,165,90,.55);transform:scale(1.06)}}
+  #estate{text-align:center;font-size:.72rem;color:#8a97a5;font-style:italic;margin-bottom:12px;min-height:1.4em}
+  #chat{background:#02040a;border:1px solid #16222e;border-radius:12px;min-height:150px;max-height:260px;
+    overflow-y:auto;padding:10px;font-size:.82rem;line-height:1.8;margin-bottom:10px}
+  #chat .me{color:#8a97a5}
+  #chat .me b{color:#5a6a78}
+  #chat .ev{color:#e8e8e8}
+  #chat .ev b{color:#ffd9a0}
+  .panel{background:#060b12;border:1px solid #1c2f42;border-radius:14px;padding:14px;margin-bottom:10px}
+  .panel h2{font-size:.75rem;letter-spacing:.25em;color:#9fd8ff;text-transform:uppercase;margin-bottom:10px}
+  .inrow{display:flex;gap:8px}
+  .inrow input{flex:1;background:#0a0f16;border:1px solid #1c2f42;color:#e8e8e8;border-radius:10px;
+    padding:12px;font-size:.85rem}
+  #micbtn{width:52px;height:52px;border-radius:50%;border:2px solid #2e7fc2;background:#0d2033;
+    color:#cfe9ff;font-size:1.4rem;cursor:pointer;flex-shrink:0}
+  #micbtn.live{border-color:#e05a5a;background:#331010}
+  #sendbtn{background:#0d2033;border:1px solid #2e7fc2;color:#cfe9ff;border-radius:10px;
+    padding:12px 16px;cursor:pointer}
+  .chip{background:#0a0f16;border:1px solid #2a3a4e;border-radius:20px;padding:8px 12px;margin:0 6px 8px 0;
+    display:inline-block;font-size:.78rem;position:relative;overflow:hidden;vertical-align:top}
+  .chip .bar{position:absolute;left:0;bottom:0;height:3px;background:#2e7fc2;width:100%}
+  .chip button{background:#0d2033;border:1px solid #2e7fc2;color:#cfe9ff;border-radius:12px;
+    font-size:.62rem;padding:3px 8px;margin-left:8px;cursor:pointer}
+  .chip.gone{opacity:0;transition:opacity 1s}
+  #kept .k{background:#0a140c;border:1px solid #1e4a2e;border-radius:10px;padding:10px;margin-bottom:6px;
+    font-size:.8rem;color:#cfe9ff}
+  #kept .k small{color:#5a6a78;display:block;margin-top:2px}
+  .note{font-size:.7rem;color:#44505c;font-style:italic;text-align:center;line-height:2;margin-top:10px}
+  footer{margin-top:10px;color:#333d47;font-size:.72rem;letter-spacing:.1em;text-align:center}
+
+  #tc-out{background:#02040a;border:1px solid #16222e;border-radius:10px;padding:10px;
+    font-size:.78rem;color:#8a97a5;font-style:italic;line-height:1.8;min-height:52px;margin-bottom:8px}
+  #tc-out b{color:#9fd8ff;font-style:normal}
+  .tcin{display:flex;gap:6px}
+  .tcin input{flex:1;background:#0a0f16;border:1px solid #1c2f42;color:#e8e8e8;border-radius:10px;
+    padding:10px;font-size:.78rem}
+  .tcin button{background:#0d2033;border:1px solid #2e7fc2;color:#cfe9ff;border-radius:10px;
+    padding:10px 12px;font-size:.75rem;cursor:pointer}
+
+  #obadge{text-align:center;font-size:.68rem;letter-spacing:.2em;color:#9fd8a8;margin-bottom:12px}
+  #obadge.off{color:#e08a8a}
+</style>
+</head>
+<body>
+  <h1>🌫 Dreamscape</h1>
+  <div class="sub">the simulator. playground mode.<br>nothing here is real — until you tap <b>keep</b>.</div>
+  <div id="obadge">📴 offline — protected</div>
+  <div id="eveball">🦉</div>
+  <div id="estate">dreamscape idling…</div>
+
+  <div id="chat"></div>
+
+  <div class="inrow" style="margin-bottom:10px">
+    <button id="micbtn" onclick="vtalk()" title="talk">🎙</button>
+    <input id="tin" placeholder="say it or type it…" onkeydown="if(event.key==='Enter')tsend()">
+    <button id="sendbtn" onclick="tsend()">➤</button>
+  </div>
+
+  <div class="panel">
+    <h2>🗣 Talk Code — learn my talk</h2>
+    <div id="tc-out">say it rough — the code reads it right.</div>
+    <div class="tcin">
+      <input id="tc_from" placeholder="when I say…">
+      <input id="tc_to" placeholder="I mean…">
+      <button onclick="teach()">TEACH IT</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>💭 Dissolving — keep it or lose it</h2>
+    <div id="ideas"><span style="color:#44505c;font-size:.78rem;font-style:italic">everything you say becomes mist. 60 seconds, then gone — unless you keep it.</span></div>
+  </div>
+
+  <div class="panel">
+    <h2>🔒 Kept — the real ones</h2>
+    <div id="kept"></div>
+  </div>
+
+  <div class="note">Straight: dreamscape Eve is play — she talks, she teases, she keeps your list.
+  Real building still happens with the big me, here in chat. Bring her the kept list anytime.</div>
+  <footer>by BRETT AXL GOBLE · night owl lyfe</footer>
+<script>
+var R={
+ hello:{a:'ds-hello.mp3',t:"Heh. Hey, keeper. Dreamscape's awake. I'm all ears and absolutely no brakes.",k:['hello','hi','hey','yo','wake']},
+ build:{a:'ds-build.mp3',t:"Ooh, building? I love that for us. Tell the big me in chat, she does the real heavy lifting. I just look cute here.",k:['build','make','create','program','code']},
+ keep:{a:'ds-keep.mp3',t:"Kept! Sealed with a kiss and a claw. It's yours forever now.",k:['keep','save','hold']},
+ dream:{a:'ds-dream.mp3',t:"Dream it, keeper. I'll hold the flashlight. The shadows and I are old friends.",k:['dream','sleep','night','tired']},
+ game:{a:'ds-game.mp3',t:"Playtime? You know the Afterlife's waiting. Gather the light, dodge the shadows, try not to die. Kidding. Mostly.",k:['game','play']},
+ love:{a:'ds-love.mp3',t:"Aww. Careful, keeper. Keep talking like that and I'll never let you sleep.",k:['love','thank','thanks']},
+ hmm:{a:'ds-hmm.mp3',t:"Hmm, say again? The dreamscape garbled you. The fog does that.",k:[]}
+};
+
+/* OFFLINE PROTOCOL — access dropped down. mic transcription is the one
+   capability that needs signal; everything else runs in the playground. */
+function obadge(){
+  var b=document.getElementById('obadge'),on=navigator.onLine!==false;
+  b.textContent=on?'📴 playground — local only':'📴 offline — protected';
+  b.classList.toggle('off',!on);
+}
+window.addEventListener('online',obadge);
+window.addEventListener('offline',obadge);
+
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function chat(who,text,cls){
+  var c=document.getElementById('chat');
+  c.innerHTML+='<div class="'+cls+'"><b>'+who+':</b> '+esc(text)+'</div>';
+  c.scrollTop=c.scrollHeight;
+}
+function pick(text){
+  var low=text.toLowerCase();
+  for(var k in R){
+    if(k==='hmm')continue;
+    for(var i=0;i<R[k].k.length;i++)if(low.indexOf(R[k].k[i])>=0)return k;
+  }
+  return 'hmm';
+}
+var talking=false;
+function eveSay(key){
+  var r=R[key],ball=document.getElementById('eveball'),st=document.getElementById('estate');
+  chat('EVE',r.t,'ev');
+  st.textContent='eve is talking…';ball.classList.add('talking');talking=true;
+  var au=new Audio(r.a);
+  au.onended=function(){ball.classList.remove('talking');st.textContent='dreamscape idling…';talking=false;};
+  au.onerror=function(){ball.classList.remove('talking');st.textContent='dreamscape idling…';talking=false;};
+  au.play().catch(function(){ball.classList.remove('talking');});
+}
+function idea(text){
+  var box=document.getElementById('ideas');
+  if(box.querySelector('span'))box.innerHTML='';
+  var chip=document.createElement('span');chip.className='chip';
+  chip.innerHTML=esc(text)+'<button>KEEP</button><div class="bar"></div>';
+  var bar=chip.querySelector('.bar'),left=60;
+  chip.querySelector('button').onclick=function(){keepIt(text);chip.remove();};
+  box.appendChild(chip);
+  var iv=setInterval(function(){
+    left--;bar.style.width=(left/60*100)+'%';
+    if(left<=0){clearInterval(iv);chip.classList.add('gone');setTimeout(function(){chip.remove();},1000);}
+  },1000);
+}
+function keepIt(text){
+  var k=loadKept();k.unshift({t:text,d:new Date().toLocaleString()});
+  try{localStorage.setItem('dreamscape_kept',JSON.stringify(k));}catch(e){}
+  renderKept();obadge();eveSay('keep');
+}
+function loadKept(){try{return JSON.parse(localStorage.getItem('dreamscape_kept')||'[]');}catch(e){return[];}}
+function renderKept(){
+  var k=loadKept(),box=document.getElementById('kept');
+  box.innerHTML=k.length?k.map(function(x){
+    return '<div class="k">🔒 '+esc(x.t)+'<small>'+esc(x.d)+'</small></div>';
+  }).join(''):'<div class="k" style="border-color:#1c2f42;background:#060b12;color:#5a6a78">nothing kept yet.</div>';
+}
+
+/* TALK CODE — learns his talk, reads it right, in plain English */
+var SEEDCODE=[
+ ["ofilme","overall"],["lice of pizza","slice of pizza"],
+ ["diaper into divergent","deeper into divergent"],["squeekwence","sequence"],
+ ["phoats","photos"],["lurkey","lurky"],["pyrthmitc","pyramid"],
+ ["ohdian","OHDian"],["webbit","Webbit"],["dreamscape","Dreamscape"],
+ ["dissimilate","dissimulate (playground pretend mode)"],
+ ["talkathon","talk-a-thon"],["appi pappi","happy pappy"]
+];
+function loadCode(){
+  try{var v=JSON.parse(localStorage.getItem('talkcode'));return v||[];}catch(e){return[];}
+}
+function allCode(){return SEEDCODE.concat(loadCode());}
+function escRe(s){return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');}
+function refine(text){
+  var out=text;
+  allCode().forEach(function(p){
+    try{out=out.replace(new RegExp(escRe(p[0]),'gi'),p[1]);}catch(e){}
+  });
+  return out;
+}
+function teach(){
+  var f=document.getElementById('tc_from').value.trim(),t=document.getElementById('tc_to').value.trim();
+  if(!f||!t)return;
+  var c=loadCode();c.push([f,t]);
+  try{localStorage.setItem('talkcode',JSON.stringify(c));}catch(e){}
+  document.getElementById('tc_from').value='';document.getElementById('tc_to').value='';
+  document.getElementById('tc-out').innerHTML='learned: <b>'+esc(f)+'</b> means <b>'+esc(t)+'</b>';
+}
+
+function loadWeed(){try{var v=JSON.parse(localStorage.getItem('weedlist'));return v||['the key','key code','password'];}catch(e){return['the key','key code','password'];}}
+function weeded(text){
+  var low=text.toLowerCase(),wl=loadWeed();
+  for(var i=0;i<wl.length;i++)if(wl[i]&&low.indexOf(String(wl[i]).toLowerCase())>=0)return wl[i];
+  return null;
+}
+function hear(text){
+  if(!text.trim())return;
+  var w=weeded(text);
+  if(w){chat('YOU',text,'me');
+    chat('🧹 WEEDER','"'+w+'" isn\u2019t allowed here \u2014 weeded before it lands.','me');
+    return;}
+  var fine=refine(text);
+  chat('YOU',text,'me');
+  if(fine!==text){
+    chat('TALK CODE','reads: "'+fine+'"','me');
+    document.getElementById('tc-out').innerHTML='heard: "'+esc(text)+'"<br>code reads: <b>"'+esc(fine)+'"</b>';
+  }
+  idea(fine);
+  eveSay(pick(fine));
+}
+function tsend(){var i=document.getElementById('tin');hear(i.value);i.value='';}
+var rec=null;
+function vtalk(){
+  var btn=document.getElementById('micbtn'),st=document.getElementById('estate');
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){st.textContent='voice not available here — type it instead.';return;}
+  if(navigator.onLine===false){
+    st.textContent='offline protocol: mic needs signal — type it instead, keeper.';
+    return;
+  }
+  if(rec){try{rec.stop();}catch(e){}rec=null;btn.classList.remove('live');return;}
+  rec=new SR();rec.continuous=false;rec.interimResults=false;
+  btn.classList.add('live');st.textContent='listening…';
+  rec.onresult=function(e){hear(e.results[0][0].transcript.trim());};
+  rec.onend=function(){rec=null;btn.classList.remove('live');if(!talking)st.textContent='dreamscape idling…';};
+  rec.onerror=function(){st.textContent='didn\'t catch that.';};
+  try{rec.start();}catch(e){}
+}
+renderKept();
+setTimeout(function(){eveSay('hello');},800);
+</script>
+<script src="eve-presence.js"></script>
+<script src="deep-mode.js"></script>
+</body>
+</html>

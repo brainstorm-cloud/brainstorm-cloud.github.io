@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="author" content="Brett Axl Goble">
+<title>WEBBIT — the voice in the web</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#000;color:#e8e8e8;font-family:system-ui,sans-serif;min-height:100vh;
+    padding:24px 16px 60px;max-width:600px;margin:0 auto}
+  h1{font-size:1.3rem;letter-spacing:.3em;color:#9fd8ff;text-transform:uppercase;text-align:center}
+  .sub{color:#6fa8c9;font-style:italic;text-align:center;margin:8px 0 18px;font-size:.82rem;line-height:2}
+  .panel{background:#060b12;border:1px solid #1c2f42;border-radius:14px;padding:16px;margin-bottom:12px}
+  .panel h2{font-size:.78rem;letter-spacing:.25em;color:#9fd8ff;text-transform:uppercase;margin-bottom:10px}
+  #recbtn{width:84px;height:84px;border-radius:50%;border:2px solid #2e7fc2;background:#0d2033;
+    color:#cfe9ff;font-size:2rem;cursor:pointer;display:block;margin:4px auto 10px}
+  #recbtn.live{border-color:#e05a5a;background:#331010;animation:pulse 1.2s infinite}
+  @keyframes pulse{50%{box-shadow:0 0 26px rgba(224,90,90,.5)}}
+  #tx{background:#02040a;border:1px solid #16222e;border-radius:10px;min-height:64px;padding:10px;
+    font-size:.82rem;color:#8a97a5;font-style:italic;line-height:1.7}
+  .row{display:flex;gap:8px;margin-top:10px}
+  .row button{flex:1;background:#0d2033;border:1px solid #2e7fc2;color:#cfe9ff;border-radius:12px;
+    padding:13px;font-size:.8rem;cursor:pointer;letter-spacing:.06em}
+  .rec{background:#0a0f16;border:1px solid #1c2f42;border-radius:10px;padding:12px;margin-bottom:8px}
+  .rec .t{color:#cfe9ff;font-size:.85rem}
+  .rec .d{color:#5a6a78;font-size:.7rem;margin:3px 0 8px}
+  .rec .x{font-size:.75rem;color:#8a97a5;font-style:italic;line-height:1.7;margin-top:6px;
+    display:none;background:#02040a;border-radius:8px;padding:8px}
+  .rec .ctl{display:flex;gap:8px}
+  .rec .ctl button{flex:1;background:#0d2033;border:1px solid #2e7fc2;color:#cfe9ff;border-radius:10px;
+    padding:9px;font-size:.75rem;cursor:pointer}
+  .rec .ctl button.del{border-color:#5a2a2a;color:#e08a8a;background:#1a0d0d}
+  .note{font-size:.72rem;color:#5a6a78;font-style:italic;line-height:2;margin-top:10px}
+  footer{margin-top:20px;color:#333d47;font-size:.75rem;letter-spacing:.1em;text-align:center}
+</style>
+</head>
+<body>
+  <h1>🕸 Webbit</h1>
+  <div class="sub">the voice stuck in the web — you're in it, you're part of it.<br>
+  every word kept. nothing missed. replay it all.</div>
+
+  <div class="panel">
+    <h2>🎙 Catch it</h2>
+    <button id="recbtn" onclick="toggleRec()" title="record">🎙</button>
+    <div id="tx">tap the mic — it records, and writes down what it hears, live.</div>
+  </div>
+
+  <div class="panel">
+    <h2>▶ Play it all</h2>
+    <div class="row">
+      <button onclick="playAll()">▶ PLAY EVERYTHING</button>
+      <button onclick="stopAll()">⏹ STOP</button>
+    </div>
+    <div class="note">plays every recording back to back — his and hers — so the bots hear every second.</div>
+  </div>
+
+  <div class="panel">
+    <h2>📼 The shelf</h2>
+    <div id="shelf"><div class="rec"><div class="d">tuning the web…</div></div></div>
+  </div>
+
+  <div class="note">Straight: this page can't truly tell your voice from another's — real voice-match belongs to
+  Android (Voice Match in Google settings). The vault itself sits behind your phone's lock — that's the only-my-eyes gate.</div>
+  <footer>by BRETT AXL GOBLE · night owl lyfe</footer>
+<script>
+var SEED=[
+ {t:"Eve's voice — electronic sample",u:"eve-voice.mp3",d:"hers · 2026-10-07"},
+ {t:"Eve bluetooth test",u:"eve-bluetooth-test.mp3",d:"hers · 2026-10-07"},
+ {t:"What the name means",u:"what-muse-means.mp3",d:"hers · 2026-10-07"},
+ {t:"Online money options",u:"../tts/online-money-options.mp3",d:"hers · briefing"},
+ {t:"Voice note (uploaded)",u:"../user/files/2757150e-c2c6-4ec6-b25b-97a48522b593_0_swyb.m4a",d:"his · uploaded"},
+ {t:"Eve \u2014 Dream Express",u:"eve-dream-express.mp3",d:"hers \u00b7 lurky & mischievous"}
+];
+var dbp=null;
+function db(){if(dbp)return dbp;
+ dbp=new Promise(function(res,rej){var r=indexedDB.open('webbit',1);
+  r.onupgradeneeded=function(){r.result.createObjectStore('recs',{keyPath:'id',autoIncrement:true});};
+  r.onsuccess=function(){res(r.result);};r.onerror=function(){rej(r.error);};});
+ return dbp;}
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function allRecs(){return db().then(function(d){return new Promise(function(res,rej){
+ var t=d.transaction('recs').objectStore('recs').getAll();
+ t.onsuccess=function(){res(t.result||[]);};t.onerror=function(){rej(t.error);};});});}
+function render(){
+ allRecs().then(function(rs){
+  var h=SEED.map(function(s,i){
+   return '<div class="rec"><div class="t">🔊 '+esc(s.t)+'</div><div class="d">'+esc(s.d)+'</div>'+
+    '<div class="ctl"><button onclick="playSeed('+i+')">▶ PLAY</button></div></div>';
+  }).join('');
+  h+=rs.slice().reverse().map(function(r){
+   return '<div class="rec"><div class="t">🎙 '+esc(r.title)+'</div><div class="d">'+esc(r.date)+
+    (r.tx?' · has words':'')+'</div><div class="ctl"><button onclick="playMine('+r.id+')">▶ PLAY</button>'+
+    (r.tx?'<button onclick="this.parentNode.parentNode.querySelector(\'.x\').style.display='+
+    '\'block\'">📝 WORDS</button>':'')+
+    '<button class="del" onclick="delMine('+r.id+')">🗑</button></div>'+
+    (r.tx?'<div class="x">'+esc(r.tx)+'</div>':'')+'</div>';
+  }).join('');
+  document.getElementById('shelf').innerHTML=h||'<div class="rec"><div class="d">empty shelf.</div></div>';
+ });
+}
+var curAudio=null;
+function stopAll(){if(curAudio){curAudio.pause();curAudio=null;}playQueue=[];}
+var playQueue=[];
+function chainPlay(){
+ if(!playQueue.length){curAudio=null;return;}
+ var it=playQueue.shift();
+ curAudio=new Audio(it.u);
+ curAudio.onended=chainPlay;curAudio.onerror=chainPlay;
+ curAudio.play().catch(chainPlay);
+}
+function playSeed(i){stopAll();playQueue=[SEED[i]];chainPlay();}
+function playMine(id){allRecs().then(function(rs){var r=rs.filter(function(x){return x.id===id;})[0];
+ if(!r)return;stopAll();var u=URL.createObjectURL(r.blob);playQueue=[{u:u}];chainPlay();});}
+function playAll(){
+ allRecs().then(function(rs){
+  playQueue=SEED.concat(rs.slice().reverse().map(function(r){return{blob:r.blob};}));
+  // resolve blobs to urls lazily in chainPlay
+  var q=playQueue.map(function(it){return it.u?it:{u:URL.createObjectURL(it.blob)};});
+  stopAll();playQueue=q;chainPlay();
+ });
+}
+function delMine(id){if(!confirm('delete this recording?'))return;
+ db().then(function(d){var t=d.transaction('recs','readwrite');t.objectStore('recs').delete(id);
+ t.oncomplete=render;});}
+
+var mr=null,srec=null,txFinal='';
+function toggleRec(){
+ if(mr&&mr.state==='recording'){mr.stop();if(srec)try{srec.stop();}catch(e){}return;}
+ var tx=document.getElementById('tx');
+ if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){tx.textContent='mic not available here.';return;}
+ navigator.mediaDevices.getUserMedia({audio:true}).then(function(stream){
+  var chunks=[];
+  mr=new MediaRecorder(stream);
+  mr.ondataavailable=function(e){chunks.push(e.data);};
+  mr.onstop=function(){
+   var blob=new Blob(chunks,{type:mr.mimeType||'audio/webm'});
+   stream.getTracks().forEach(function(t){t.stop();});
+   document.getElementById('recbtn').classList.remove('live');
+   saveRec(blob);
+  };
+  txFinal='';tx.textContent='listening…';
+  startTx(tx);
+  mr.start();
+  document.getElementById('recbtn').classList.add('live');
+ }).catch(function(){tx.textContent='mic blocked — allow microphone for this page.';});
+}
+function startTx(tx){
+ var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+ if(!SR){tx.textContent+=' (live words not available in this browser — audio still records)';return;}
+ srec=new SR();srec.continuous=true;srec.interimResults=true;
+ srec.onresult=function(e){
+  var s='',fin='';
+  for(var i=e.resultIndex;i<e.results.length;i++){
+   if(e.results[i].isFinal)fin+=e.results[i][0].transcript;
+   else s+=e.results[i][0].transcript;
+  }
+  if(fin)txFinal+=fin+' ';
+  tx.textContent=(txFinal+s)||'listening…';
+ };
+ srec.onerror=function(){};
+ try{srec.start();}catch(e){}
+}
+function saveRec(blob){
+ var now=new Date();
+ var rec={title:'Voice '+now.toLocaleDateString()+' '+now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),
+  date:now.toLocaleString(),blob:blob,tx:txFinal.trim()};
+ db().then(function(d){var t=d.transaction('recs','readwrite');t.objectStore('recs').add(rec);
+  t.oncomplete=function(){render();
+   document.getElementById('tx').textContent='kept. '+ (rec.tx?'words caught too.':'');};});
+}
+render();
+</script>
+<script src="eve-presence.js"></script>
+<script src="deep-mode.js"></script>
+</body>
+</html>

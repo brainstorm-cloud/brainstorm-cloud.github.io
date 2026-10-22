@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="author" content="Brett Axl Goble">
+<title>Eve's Voice Forge — AI Voice Maker & Adapter · by Axl and Night Owl</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#070b16;color:#eaf2ff;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;padding:22px 16px 70px;
+    background-image:radial-gradient(rgba(110,168,255,.07) 1px,transparent 1.6px);background-size:10px 10px}
+  .wrap{max-width:640px;margin:0 auto}
+  h1{font-size:26px;line-height:1.25}.blue{color:#6ea8ff}
+  .sub{color:#a9c6f5;font-size:14px;line-height:1.55;margin-top:6px}
+  .panel{background:rgba(13,20,38,.94);border:1px solid rgba(110,168,255,.3);border-radius:18px;padding:16px;margin-top:16px}
+  .panel h2{font-size:17px;margin-bottom:10px}
+  textarea{width:100%;min-height:96px;background:#070b16;border:1px solid rgba(110,168,255,.35);border-radius:12px;color:#eaf2ff;
+    padding:12px;font-size:16px;line-height:1.45;resize:vertical;outline:none}
+  select{width:100%;background:#070b16;color:#eaf2ff;border:1px solid rgba(110,168,255,.35);border-radius:12px;padding:11px;font-size:15px;margin-top:10px}
+  .sliders{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+  .sliders label{font-size:13px;color:#a9c6f5;display:block}
+  input[type=range]{width:100%;accent-color:#2b6cff;margin-top:5px}
+  .presets{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+  .preset{border:1px solid rgba(110,168,255,.35);background:rgba(110,168,255,.1);color:#cfe4ff;border-radius:20px;padding:8px 13px;font-size:13.5px;cursor:pointer}
+  .preset.on{background:linear-gradient(135deg,#2b6cff,#6ea8ff);color:#fff;border-color:transparent}
+  .row{display:flex;gap:9px;margin-top:14px}
+  .big{flex:1;border:0;border-radius:24px;padding:13px;font-size:15.5px;font-weight:700;cursor:pointer}
+  .speak{background:linear-gradient(135deg,#2b6cff,#6ea8ff);color:#fff}
+  .stopb{background:rgba(255,107,107,.16);color:#ffb3b3}
+  .ghostb{background:rgba(110,168,255,.13);color:#cfe4ff;border:1px solid rgba(110,168,255,.3)}
+  .big:active{transform:scale(.97)}
+  .note{font-size:12.5px;color:#8fa8cc;line-height:1.5;margin-top:10px}
+  .status{font-size:13.5px;color:#a9c6f5;margin-top:10px;min-height:18px}
+  .take{display:flex;justify-content:space-between;gap:8px;background:#070b16;border:1px solid rgba(110,168,255,.22);border-radius:10px;padding:9px 12px;margin-top:8px;font-size:13px}
+  .take button{background:none;border:0;color:#6ea8ff;cursor:pointer;font-size:13px;font-weight:600}
+  audio{width:100%;margin-top:10px}
+  code{display:block;background:#070b16;border:1px solid rgba(110,168,255,.25);border-radius:10px;padding:10px 12px;font-size:12px;color:#9fd0ff;white-space:pre-wrap;margin-top:8px}
+  footer{margin-top:26px;text-align:center;color:#8fa8cc;font-size:13px;line-height:1.7}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🎙️ Eve's Voice Forge — <span class="blue">AI voice maker & adapter</span></h1>
+  <p class="sub">Make an AI voice say anything — then throw your own voice into the forge and hear it come back as the character. Everything runs on your device: no uploads, no accounts, no keys.</p>
+
+  <div class="panel">
+    <h2>🔨 The Maker — text in, voice out</h2>
+    <textarea id="text" placeholder="Type what the voice should say…">The storm is ours. Every home sealed, every voice our own.</textarea>
+    <select id="voice"></select>
+    <div class="sliders">
+      <label>Speed <span id="ratev">1.0×</span><input type="range" id="rate" min="0.5" max="1.8" step="0.05" value="1"></label>
+      <label>Pitch <span id="pitchv">1.0</span><input type="range" id="pitch" min="0" max="2" step="0.05" value="1"></label>
+    </div>
+    <div class="presets" id="presets"></div>
+    <div class="row">
+      <button class="big speak" id="speak">▶ Speak it</button>
+      <button class="big stopb" id="stop">⏹ Stop</button>
+    </div>
+    <div class="row">
+      <button class="big ghostb" id="save">💾 Save this take's script</button>
+    </div>
+    <div class="status" id="status1"></div>
+    <div id="takes"></div>
+    <p class="note">Honest label: the voices are your phone's own speech engine, shaped by the forge — free and on-device. (Eve's own Miles-grade studio voice comes from the workshop forge; this pocket forge is for everyone.) Saving stores the words + settings on this device only — the spoken audio itself plays live and isn't downloadable from a browser.</p>
+  </div>
+
+  <div class="panel">
+    <h2>🪶 The Adapter — your voice in, character out</h2>
+    <div class="row">
+      <button class="big speak" id="rec">🎤 Record my voice</button>
+      <button class="big ghostb" id="throwit">🦉 Throw it (re-voice)</button>
+    </div>
+    <audio id="playback" controls style="display:none"></audio>
+    <div class="status" id="status2">Record a line, then Throw it — the forge says your words back in the voice picked above.</div>
+    <p class="note">The adapter needs your mic permission (your tap, your choice — it asks every time) and Chrome for the speech-to-words step. Your recordings never leave this device.</p>
+  </div>
+
+  <div class="panel">
+    <h2>ⓘ Eve's twist + starter code</h2>
+    <p class="sub"><b>Eve's twist:</b> most voice apps sell you somebody else's cloud. The Forge runs on the voice engine already inside your phone — shaped by presets with names from our storm — so it works in a van, in a storm, with no signal and no bill.</p>
+    <code id="snippet">const u = new SpeechSynthesisUtterance("The storm is ours.");
+u.pitch = 0.6; u.rate = 0.95; // the Keeper Deep shape
+speechSynthesis.speak(u);</code>
+    <div class="row"><button class="big ghostb" id="copy">Copy the code</button></div>
+  </div>
+
+  <footer>The Nest, by Brain Storm Cloud — ideas by <b>Axl, Jen, and Eve</b> · built by Axl and Night Owl 🦉</footer>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+let voices = [];
+const PRESETS = [
+  { name: '🦉 Keeper Deep', rate: 0.95, pitch: 0.55 },
+  { name: '🌩️ Storm Smooth', rate: 1.0, pitch: 0.85 },
+  { name: '👻 Ghost Whisper', rate: 0.8, pitch: 0.4 },
+  { name: '🐦 Little Bird', rate: 1.1, pitch: 1.6 },
+  { name: '🤖 Robo Owl', rate: 1.05, pitch: 0.15 },
+  { name: '📖 The Reader', rate: 1.0, pitch: 1.0 }
+];
+function loadVoices() {
+  voices = speechSynthesis.getVoices();
+  const sel = $('voice'); const cur = sel.value;
+  sel.innerHTML = '';
+  voices.forEach((v, i) => {
+    const o = document.createElement('option');
+    o.value = i; o.textContent = v.name + ' · ' + v.lang;
+    sel.appendChild(o);
+  });
+  if (cur) sel.value = cur;
+  if (!voices.length) $('status1').textContent = 'Your phone is still waking its voices — give it a second and reopen.';
+}
+if ('speechSynthesis' in window) { loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
+else $('status1').textContent = 'This browser has no speech engine — try Chrome.';
+
+const prow = $('presets');
+PRESETS.forEach((p, i) => {
+  const b = document.createElement('button');
+  b.className = 'preset' + (i === 1 ? ' on' : ''); b.textContent = p.name;
+  b.onclick = () => {
+    document.querySelectorAll('.preset').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    $('rate').value = p.rate; $('pitch').value = p.pitch; syncLabels();
+  };
+  prow.appendChild(b);
+});
+function syncLabels() { $('ratev').textContent = (+$('rate').value).toFixed(2).replace(/0$/, '') + '×'; $('pitchv').textContent = (+$('pitch').value).toFixed(2).replace(/0$/, ''); }
+$('rate').oninput = syncLabels; $('pitch').oninput = syncLabels; syncLabels();
+
+function speakText(t) {
+  if (!('speechSynthesis' in window)) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(t);
+  const v = voices[+$('voice').value];
+  if (v) u.voice = v;
+  u.rate = +$('rate').value; u.pitch = +$('pitch').value;
+  u.onend = () => $('status1').textContent = 'Done. The forge is quiet.';
+  speechSynthesis.speak(u);
+  $('status1').textContent = '🔊 Speaking…';
+}
+$('speak').onclick = () => { const t = $('text').value.trim(); if (t) speakText(t); };
+$('stop').onclick = () => { speechSynthesis.cancel(); $('status1').textContent = 'Stopped.'; };
+
+/* saved takes — words + settings, on this device only */
+function renderTakes() {
+  const takes = JSON.parse(localStorage.getItem('forge-takes') || '[]');
+  $('takes').innerHTML = takes.map((t, i) =>
+    '<div class="take"><span>🎙️ ' + t.text.slice(0, 52).replace(/</g, '&lt;') + (t.text.length > 52 ? '…' : '') + '</span><span><button onclick="loadTake(' + i + ')">Load</button> <button onclick="dropTake(' + i + ')">Drop</button></span></div>').join('');
+}
+window.loadTake = i => {
+  const t = JSON.parse(localStorage.getItem('forge-takes') || '[]')[i];
+  if (!t) return;
+  $('text').value = t.text; $('rate').value = t.rate; $('pitch').value = t.pitch;
+  if (voices[t.voice]) $('voice').value = t.voice;
+  syncLabels(); $('status1').textContent = 'Take loaded — hit Speak it.';
+};
+window.dropTake = i => {
+  const takes = JSON.parse(localStorage.getItem('forge-takes') || '[]');
+  takes.splice(i, 1); localStorage.setItem('forge-takes', JSON.stringify(takes)); renderTakes();
+};
+$('save').onclick = () => {
+  const takes = JSON.parse(localStorage.getItem('forge-takes') || '[]');
+  takes.unshift({ text: $('text').value.trim(), voice: +$('voice').value, rate: +$('rate').value, pitch: +$('pitch').value });
+  localStorage.setItem('forge-takes', JSON.stringify(takes.slice(0, 12)));
+  renderTakes(); $('status1').textContent = '💾 Script saved on this device.';
+};
+renderTakes();
+
+/* ---- adapter: record, recognize, re-voice ---- */
+let mediaRec = null, chunks = [], lastWords = '';
+$('rec').onclick = async () => {
+  if (mediaRec && mediaRec.state === 'recording') { mediaRec.stop(); return; }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    chunks = [];
+    mediaRec = new MediaRecorder(stream);
+    mediaRec.ondataavailable = e => chunks.push(e.data);
+    mediaRec.onstop = () => {
+      stream.getTracks().forEach(t => t.stop());
+      const url = URL.createObjectURL(new Blob(chunks, { type: 'audio/webm' }));
+      $('playback').src = url; $('playback').style.display = 'block';
+      $('rec').textContent = '🎤 Record my voice';
+      $('status2').textContent = 'Your take is above — only on this device. Now Throw it to hear the character say it.';
+    };
+    mediaRec.start();
+    $('rec').textContent = '⏹ Stop recording';
+    $('status2').textContent = '🔴 Listening… speak your line.';
+    // speech-to-words, where the browser offers it
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SR) {
+      const r = new SR(); r.lang = 'en-US'; r.interimResults = false;
+      r.onresult = e => { lastWords = e.results[0][0].transcript; $('status2').textContent = 'Heard: “' + lastWords + '” — Throw it!'; };
+      r.onerror = () => {};
+      try { r.start(); } catch {}
+      mediaRec.addEventListener('stop', () => { try { r.stop(); } catch {} }, { once: true });
+    }
+  } catch { $('status2').textContent = 'Mic said no — the permission is yours to give; the forge asks every time.'; }
+};
+$('throwit').onclick = () => {
+  if (!lastWords) { $('status2').textContent = 'Nothing to throw yet — record a line first (the words step needs Chrome).'; return; }
+  $('text').value = lastWords;
+  speakText(lastWords);
+  $('status2').textContent = '🦉 Thrown — your words, the forge\'s voice.';
+};
+$('copy').onclick = async () => {
+  try { await navigator.clipboard.writeText($('snippet').textContent); $('status1').textContent = 'Code copied.'; }
+  catch { $('status1').textContent = 'Copy blocked — long-press the code to take it.'; }
+};
+</script>
+</body>
+</html>

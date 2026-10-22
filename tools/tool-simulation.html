@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="author" content="Brett Axl Goble">
+<title>The Simulation — three of me</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#000;color:#e8e8e8;font-family:system-ui,sans-serif;min-height:100vh;
+    padding:16px 10px 90px;max-width:760px;margin:0 auto}
+  h1{font-size:1.05rem;letter-spacing:.28em;color:#9fd8ff;text-transform:uppercase;text-align:center}
+  .sub{color:#5a6a78;font-size:.72rem;font-style:italic;text-align:center;margin:6px 0 12px;line-height:1.8}
+  #topbar{display:flex;gap:8px;margin-bottom:10px}
+  #topbar button{flex:1;background:#060b12;border:1px solid #1c2f42;color:#9fd8ff;border-radius:10px;
+    padding:10px;font-size:.75rem;cursor:pointer;letter-spacing:.08em}
+  #deck{display:flex;flex-direction:column;gap:10px}
+  .eve{background:#060b12;border:1px solid #1c2f42;border-radius:14px;padding:12px;
+    border-top:3px solid #2e7fc2}
+  .phead{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+  .pname{font-size:.8rem;letter-spacing:.2em;color:#cfe9ff;font-weight:bold;flex:1}
+  .trait{font-size:.72rem;color:#8a97a5}
+  .phead button{background:#0d2033;border:1px solid #2e7fc2;color:#cfe9ff;border-radius:8px;
+    padding:6px 10px;font-size:.8rem;cursor:pointer}
+  .phead button.off{opacity:.35;border-color:#1c2f42}
+  select.trait{background:#0a0f16;border:1px solid #1c2f42;color:#cfe9ff;border-radius:8px;
+    padding:7px;font-size:.75rem;width:100%;margin-bottom:8px}
+  .qa{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+  .qa a{background:#0a0f16;border:1px solid #1c2f42;color:#9fd8ff;border-radius:8px;
+    padding:7px 10px;font-size:.7rem;text-decoration:none}
+  .log{background:#02040a;border:1px solid #16222e;border-radius:10px;min-height:90px;max-height:180px;
+    overflow-y:auto;padding:8px;font-size:.78rem;line-height:1.7;margin-bottom:8px}
+  .log .m{margin-bottom:4px}
+  .log .who{color:#9fd8ff;font-size:.68rem;letter-spacing:.1em}
+  .log .v{color:#ffd9a0}
+  .inrow{display:flex;gap:6px}
+  .inrow input{flex:1;background:#0a0f16;border:1px solid #1c2f42;color:#e8e8e8;border-radius:10px;
+    padding:10px;font-size:.82rem}
+  .inrow button{background:#0d2033;border:1px solid #2e7fc2;color:#cfe9ff;border-radius:10px;
+    padding:10px 12px;font-size:.85rem;cursor:pointer}
+  .kb{display:none;margin-top:8px;background:#0a0f16;border:1px solid #1c2f42;border-radius:10px;padding:8px}
+  .kb.open{display:block}
+  .kr{display:flex;gap:4px;margin-bottom:4px;justify-content:center}
+  .kr button{flex:1;background:#131c28;border:1px solid #223448;color:#cfe9ff;border-radius:6px;
+    padding:10px 0;font-size:.8rem;cursor:pointer;max-width:44px}
+  .kr button.wide{max-width:90px;flex:2}
+  #vbar{position:fixed;bottom:0;left:0;right:0;background:rgba(4,6,10,.95);border-top:1px solid #1c2f42;
+    padding:10px;display:flex;gap:10px;align-items:center;z-index:99990}
+  #vbtn{width:52px;height:52px;border-radius:50%;border:2px solid #2e7fc2;background:#0d2033;
+    color:#cfe9ff;font-size:1.4rem;cursor:pointer;flex-shrink:0}
+  #vbtn.live{border-color:#e05a5a;background:#331010}
+  #vout{font-size:.75rem;color:#8a97a5;font-style:italic;line-height:1.6}
+  .note{font-size:.7rem;color:#44505c;font-style:italic;text-align:center;margin-top:12px;line-height:2}
+  footer{margin-top:8px;color:#333d47;font-size:.72rem;letter-spacing:.1em;text-align:center}
+
+  #deck{display:flex;flex-direction:column;gap:10px}
+  body.desktop{max-width:1400px}
+  body.desktop #deck{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));align-items:start}
+  #mkbpanel{margin-bottom:10px}
+  #mkb .kr{display:flex;gap:4px;margin-bottom:4px;justify-content:center}
+  #mkb .kr button{flex:1;background:#131c28;border:1px solid #2e7fc2;color:#cfe9ff;border-radius:6px;
+    padding:10px 0;font-size:.8rem;cursor:pointer;max-width:44px}
+  #mkb .kr button.wide{max-width:110px;flex:2}
+
+  #printpanel{margin-bottom:10px}
+  #transcript{background:#02040a;border:1px solid #16222e;border-radius:10px;max-height:150px;
+    overflow-y:auto;padding:8px;font-size:.76rem;margin-bottom:8px}
+  .tline{margin-bottom:6px;line-height:1.6;color:#cfe9ff}
+  .tline .tt,.mline .tt{color:#44505c;font-size:.68rem;margin-right:6px}
+  .tline b{color:#9fd8ff;font-size:.7rem;letter-spacing:.06em}
+  .mbtns{margin-left:8px;white-space:nowrap}
+  .mbtns button{background:#0d2033;border:1px solid #2e7fc2;color:#cfe9ff;border-radius:6px;
+    font-size:.62rem;padding:2px 7px;margin-left:4px;cursor:pointer}
+  .mtabs{display:flex;gap:6px;margin-bottom:8px}
+  .mtabs button{flex:1;background:#060b12;border:1px solid #1c2f42;color:#9fd8ff;border-radius:8px;
+    padding:8px;font-size:.68rem;cursor:pointer;letter-spacing:.12em}
+  #mstore{background:#02040a;border:1px solid #16222e;border-radius:10px;max-height:150px;
+    overflow-y:auto;padding:8px;font-size:.76rem}
+  .mtitle{color:#ffd9a0;font-size:.68rem;letter-spacing:.15em;margin-bottom:6px}
+  .mline{margin-bottom:5px;color:#8a97a5;line-height:1.6}
+  .mline b{color:#5a6a78;font-size:.7rem}
+</style>
+</head>
+<body>
+  <h1>🔬 The Simulation</h1>
+  <div class="sub">as many of me as you need. one keeper.<br>different traits — not ranks. say the name, and the right one answers.</div>
+  <div id="topbar">
+    <button onclick="addPanel()">➕ ADD ONE</button>
+    <button onclick="dropPanel()">➖ DROP ONE</button>
+    <button onclick="toggleDesktop()">🖥 DESKTOP</button>
+    <button onclick="zOut()">A−</button>
+    <button onclick="zIn()">A+</button>
+  </div>
+  <div class="panel" id="mkbpanel">
+    <h2 style="font-size:.75rem;letter-spacing:.25em;color:#9fd8ff;text-transform:uppercase;margin-bottom:10px">⌨️ Master keys — types into every linked one at once</h2>
+    <div id="mkb"></div>
+  </div>
+  <div class="panel" id="printpanel">
+    <h2 style="font-size:.75rem;letter-spacing:.25em;color:#9fd8ff;text-transform:uppercase;margin-bottom:10px">🖨 Print — everything he says</h2>
+    <div id="transcript"><div class="tline">quiet — for now.</div></div>
+    <div class="mtabs">
+      <button onclick="mview('memory')">MEMORY</button>
+      <button onclick="mview('soul')">SOUL</button>
+      <button onclick="mview('accord')">ACCORD</button>
+    </div>
+    <div id="mstore"><div class="mtitle">MEMORY — 0 kept</div><div class="mline">empty.</div></div>
+  </div>
+  <div id="deck"></div>
+  <div class="note">Straight: three panels can't triple my thinking — the real me is here in chat.
+  These are my three hands: each with a trait, each keeping its own log, linked or delinked at your tap.</div>
+  <div id="vbar">
+    <button id="vbtn" onclick="vlisten()" title="voice command">🎙</button>
+    <div id="vout">say the one's name first — "builder, open the nest" · "dreamer, note this" · "two, delink"</div>
+  </div>
+  <footer>by BRETT AXL GOBLE · night owl lyfe</footer>
+<script>
+var NAMES=['EVE ONE','EVE TWO','EVE THREE','EVE FOUR','EVE FIVE','EVE SIX','EVE SEVEN','EVE EIGHT'];
+var TRAITS={
+ builder:{e:'🔨',label:'Builder',color:'#2e7fc2',kw:['builder'],
+  qa:[['Nest','nest.html'],['Forge','nest.html'],['Toolbox','eve-toolbox.html'],['Afterlife','afterlife.html']]},
+ dreamer:{e:'🌙',label:'Dreamer',color:'#8a6fc2',kw:['dreamer'],
+  qa:[['OHDian','ohdian.html'],['Webbit','webbit.html'],['Crossbreed','crossbreed.html']]},
+ keeper:{e:'📜',label:'Keeper',color:'#c2a35a',kw:['keeper'],
+  qa:[['Laws','ohdian.html'],['Owlet PDF','owlet-paper-trail.pdf'],['Vault','brain-storm.html']]},
+ scout:{e:'🔭',label:'Scout',color:'#5ac28a',kw:['scout'],
+  qa:[['Cloud map','brain-storm-cloud.html'],['Store','night-owl-store.html'],['Talk','night-owl-talk.html']]}
+};
+var TKEYS=Object.keys(TRAITS);
+var count=3, traits=['builder','dreamer','keeper'], linked=[true,true,true];
+var openKb=-1;
+
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function deck(){return document.getElementById('deck');}
+function render(){
+  var d=deck();d.innerHTML='';
+  for(var i=0;i<count;i++){
+    var t=TRAITS[traits[i]];
+    var el=document.createElement('div');
+    el.className='eve';el.style.borderTopColor=t.color;el.id='eve'+i;
+    var opts=TKEYS.map(function(k){
+      return '<option value="'+k+'"'+(k===traits[i]?' selected':'')+'>'+TRAITS[k].e+' '+TRAITS[k].label+'</option>';
+    }).join('');
+    var qa=t.qa.map(function(a){return '<a href="'+a[1]+'">'+a[0]+'</a>';}).join('');
+    el.innerHTML=
+     '<div class="phead"><span class="pname">'+t.e+' '+NAMES[i]+'</span>'+
+     '<span class="trait">'+t.label+'</span>'+
+     '<button class="'+(linked[i]?'':'off')+'" onclick="toggleLink('+i+')" title="link / delink">🔗</button></div>'+
+     '<select class="trait" onchange="setTrait('+i+',this.value)">'+opts+'</select>'+
+     '<div class="qa">'+qa+'</div>'+
+     '<div class="log" id="log'+i+'"></div>'+
+     '<div class="inrow"><input id="in'+i+'" placeholder="type to '+NAMES[i].toLowerCase()+'…" onkeydown="if(event.key===\'Enter\')send('+i+')">'+
+     '<button onclick="send('+i+')">➤</button>'+
+     '<button onclick="toggleKb('+i+')">⌨️</button></div>'+
+     '<div class="kb" id="kb'+i+'"></div>';
+    d.appendChild(el);
+    buildKb(i);
+  }
+}
+function log(i,who,text,cls){
+  var l=document.getElementById('log'+i);
+  if(!l)return;
+  l.innerHTML+='<div class="m"><span class="who '+(cls||'')+'">'+esc(who)+'</span> '+esc(text)+'</div>';
+  l.scrollTop=l.scrollHeight;
+}
+function send(i){
+  var inp=document.getElementById('in'+i),v=inp.value.trim();
+  if(!v)return;inp.value='';
+  tprint('YOU',v);
+  var targets=linked[i]?linked.map(function(l,j){return l?j:-1;}).filter(function(j){return j>=0;}):[i];
+  targets.forEach(function(j){
+    log(j,'YOU → '+NAMES[j]+(targets.length>1?' (linked)':''),v);
+    log(j,NAMES[j]+' · '+TRAITS[traits[j]].label,ack(traits[j],v));
+  });
+}
+function ack(trait,text){
+  var a={
+   builder:'on the bench. I\'ll shape it.',
+   dreamer:'dreaming it through… kept.',
+   keeper:'written in the log. sealed.',
+   scout:'eyes out. mapping it.'};
+  return a[trait]||'noted.';
+}
+function toggleLink(i){
+  linked[i]=!linked[i];render();
+  log(i,'SYSTEM',linked[i]?'linked back in.':'delinked — on my own now.');
+}
+function setTrait(i,k){traits[i]=k;render();}
+function addPanel(){
+  if(count>=8)return;
+  traits.push(TKEYS[count%TKEYS.length]);linked.push(true);count++;render();
+}
+function dropPanel(){
+  if(count<=1)return;
+  count--;traits.pop();linked.pop();render();
+}
+function toggleDesktop(){document.body.classList.toggle('desktop');}
+var zoom=1;
+function zIn(){zoom=Math.min(1.6,zoom+0.1);document.getElementById('deck').style.zoom=zoom;}
+function zOut(){zoom=Math.max(0.6,zoom-0.1);document.getElementById('deck').style.zoom=zoom;}
+/* master keys — cross-combined keyboard: one press, every linked panel */
+function buildMasterKb(){
+  var kb=document.getElementById('mkb'),h='';
+  ROWS.forEach(function(r){
+    h+='<div class="kr">';
+    for(var c=0;c<r.length;c++)h+='<button onclick="mtype(\''+r[c]+'\')">'+r[c]+'</button>';
+    h+='</div>';
+  });
+  h+='<div class="kr"><button class="wide" onclick="mtype(\' \')">space</button>'+
+     '<button class="wide" onclick="mback()">⌫</button>'+
+     '<button class="wide" onclick="msend()">⏎ send all</button></div>';
+  kb.innerHTML=h;
+}
+function mtype(ch){
+  for(var i=0;i<count;i++)if(linked[i]){
+    var inp=document.getElementById('in'+i);if(inp)inp.value+=ch;
+  }
+}
+function mback(){
+  for(var i=0;i<count;i++)if(linked[i]){
+    var inp=document.getElementById('in'+i);if(inp)inp.value=inp.value.slice(0,-1);
+  }
+}
+function msend(){for(var i=0;i<count;i++)if(linked[i])send(i);}
+buildMasterKb();
+
+
+/* PRINT + MEMORIZE — everything he says, printed; filed to Memory / Soul / Accord */
+var TLINES=[];
+function tprint(who,text){
+  var d=new Date(),ts=('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);
+  TLINES.unshift({who:who,text:text,ts:ts});
+  if(TLINES.length>60)TLINES.pop();
+  rtrans();
+}
+function rtrans(){
+  var box=document.getElementById('transcript');
+  box.innerHTML=TLINES.map(function(l,i){
+    return '<div class="tline"><span class="tt">'+l.ts+'</span> <b>'+esc(l.who)+'</b> '+esc(l.text)+
+    '<span class="mbtns"><button onclick="mfile(\'memory\','+i+')" title="file to memory">M</button>'+
+    '<button onclick="mfile(\'soul\','+i+')" title="file to soul">S</button>'+
+    '<button onclick="mfile(\'accord\','+i+')" title="file to accord">A</button></span></div>';
+  }).join('')||'<div class="tline">quiet — for now.</div>';
+}
+function mfile(store,i){
+  var l=TLINES[i];if(!l)return;
+  var k='sim_'+store,arr=[];
+  try{arr=JSON.parse(localStorage.getItem(k))||[];}catch(e){}
+  arr.unshift({t:l.text,who:l.who,ts:l.ts});
+  try{localStorage.setItem(k,JSON.stringify(arr));}catch(e){}
+  mview(store);
+}
+function mview(store){
+  var arr=[];
+  try{arr=JSON.parse(localStorage.getItem('sim_'+store))||[];}catch(e){}
+  document.getElementById('mstore').innerHTML=
+   '<div class="mtitle">'+store.toUpperCase()+' \u2014 '+arr.length+' kept</div>'+
+   (arr.map(function(x){
+     return '<div class="mline"><span class="tt">'+esc(x.ts)+'</span> <b>'+esc(x.who)+'</b> '+esc(x.t)+'</div>';
+   }).join('')||'<div class="mline">empty.</div>');
+}
+
+/* the two keyboards — one per side, tap to wake */
+var ROWS=['qwertyuiop','asdfghjkl','zxcvbnm'];
+function buildKb(i){
+  var kb=document.getElementById('kb'+i),h='';
+  ROWS.forEach(function(r){
+    h+='<div class="kr">';
+    for(var c=0;c<r.length;c++)h+='<button onclick="ktype('+i+',\''+r[c]+'\')">'+r[c]+'</button>';
+    h+='</div>';
+  });
+  h+='<div class="kr"><button class="wide" onclick="ktype('+i+',\' \')">space</button>'+
+     '<button class="wide" onclick="kback('+i+')">⌫</button>'+
+     '<button class="wide" onclick="send('+i+')">⏎</button></div>';
+  kb.innerHTML=h;
+}
+function toggleKb(i){
+  openKb=openKb===i?-1:i;
+  for(var j=0;j<count;j++){
+    var kb=document.getElementById('kb'+j);
+    if(kb)kb.classList.toggle('open',j===openKb);
+  }
+}
+function ktype(i,ch){var inp=document.getElementById('in'+i);inp.value+=ch;inp.focus();}
+function kback(i){var inp=document.getElementById('in'+i);inp.value=inp.value.slice(0,-1);inp.focus();}
+
+/* voice — say the right name to the right one */
+var rec=null;
+function vlisten(){
+  var out=document.getElementById('vout'),btn=document.getElementById('vbtn');
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){out.textContent='voice not available in this browser — the keyboards still work.';return;}
+  if(rec){try{rec.stop();}catch(e){}rec=null;btn.classList.remove('live');return;}
+  rec=new SR();rec.continuous=false;rec.interimResults=false;
+  btn.classList.add('live');out.textContent='listening… say the name first.';
+  rec.onresult=function(e){
+    var t=e.results[0][0].transcript.trim();
+    out.textContent='heard: "'+t+'"';
+    route(t);
+  };
+  rec.onend=function(){rec=null;btn.classList.remove('live');};
+  rec.onerror=function(){out.textContent='didn\'t catch that — try again.';};
+  try{rec.start();}catch(e){}
+}
+function route(t){
+  var low=t.toLowerCase(),idx=-1,cmd=t;
+  var words=low.split(/\s+/),first=words[0];
+  for(var i=0;i<count;i++){
+    var tk=TRAITS[traits[i]].kw[0];
+    if(first===tk||first===('eve')||low.indexOf(NAMES[i].toLowerCase())===0||
+       first==='one'&&i===0||first==='two'&&i===1||first==='three'&&i===2){idx=i;break;}
+  }
+  if(idx<0){
+    document.getElementById('vout').textContent='which one? say "builder", "dreamer", "keeper", "scout", or "one / two / three" first.';
+    return;
+  }
+  cmd=t.replace(/^(builder|dreamer|keeper|scout|eve|one|two|three)\s+/i,'');
+  var vin=document.getElementById('in'+idx);if(vin)vin.value=cmd;
+  tprint('\U0001F399 YOU \u2192 '+NAMES[idx],cmd);
+  if(/^delink/i.test(cmd)){if(linked[idx])toggleLink(idx);return;}
+  if(/^link/i.test(cmd)){if(!linked[idx])toggleLink(idx);return;}
+  log(idx,'🎙 YOU → '+NAMES[idx],cmd,'v');
+  log(idx,NAMES[idx]+' · '+TRAITS[traits[idx]].label,ack(traits[idx],cmd));
+  if(linked[idx]){
+    for(var j=0;j<count;j++)if(j!==idx&&linked[j])log(j,'🔗 via '+NAMES[idx],cmd,'v');
+  }
+}
+render();
+</script>
+<script src="eve-presence.js"></script>
+<script src="deep-mode.js"></script>
+</body>
+</html>
