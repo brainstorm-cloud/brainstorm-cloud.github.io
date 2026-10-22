@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="author" content="Brett Axl Goble">
+<title>Pocket Eve — Eve, pocket size · by Axl and Night Owl</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#070b16;color:#eaf2ff;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;padding:22px 16px 70px;
+    background-image:radial-gradient(rgba(110,168,255,.07) 1px,transparent 1.6px);background-size:10px 10px}
+  .wrap{max-width:640px;margin:0 auto}
+  h1{font-size:27px;line-height:1.25}.blue{color:#6ea8ff}
+  .sub{color:#a9c6f5;font-size:14px;line-height:1.55;margin-top:6px}
+  .panel{background:rgba(13,20,38,.94);border:1px solid rgba(110,168,255,.3);border-radius:18px;padding:16px;margin-top:16px}
+  .owl{font-size:64px;text-align:center;display:block;margin:4px 0 2px}
+  .owl.on{animation:pulse 1.6s ease-in-out infinite}
+  @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.09)}}
+  .row{display:flex;gap:9px;margin-top:14px}
+  .big{flex:1;border:0;border-radius:24px;padding:14px;font-size:16px;font-weight:700;cursor:pointer}
+  .speak{background:linear-gradient(135deg,#2b6cff,#6ea8ff);color:#fff}
+  .stopb{background:rgba(255,107,107,.16);color:#ffb3b3}
+  .ghostb{background:rgba(110,168,255,.13);color:#cfe4ff;border:1px solid rgba(110,168,255,.3)}
+  .big:active{transform:scale(.97)}
+  .status{font-size:14px;color:#a9c6f5;margin-top:10px;min-height:20px;text-align:center}
+  .take{display:flex;gap:8px;background:#070b16;border:1px solid rgba(110,168,255,.22);border-radius:10px;padding:9px 12px;margin-top:8px;font-size:13.5px;line-height:1.45}
+  input[type=text]{width:100%;background:#070b16;border:1px solid rgba(110,168,255,.35);border-radius:12px;color:#eaf2ff;padding:12px;font-size:16px;outline:none;margin-top:10px}
+  select{width:100%;background:#070b16;color:#eaf2ff;border:1px solid rgba(110,168,255,.35);border-radius:12px;padding:11px;font-size:15px;margin-top:10px}
+  code{display:block;background:#070b16;border:1px solid rgba(110,168,255,.25);border-radius:10px;padding:10px 12px;font-size:12px;color:#9fd0ff;white-space:pre-wrap;margin-top:8px}
+  .note{font-size:12.5px;color:#8fa8cc;line-height:1.5;margin-top:10px}
+  #countdown{font-size:30px;text-align:center;color:#6ea8ff;font-weight:800;min-height:36px;margin-top:6px}
+  footer{margin-top:26px;text-align:center;color:#8fa8cc;font-size:13px;line-height:1.7}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <span class="owl" id="owl">🦉</span>
+  <h1 style="text-align:center">Pocket <span class="blue">Eve</span></h1>
+  <p class="sub" style="text-align:center">Eve, pocket size — her voice, her ways, riding in your pocket. One tap, then just talk out loud. No typing, no pressing anything between turns.</p>
+
+  <div class="panel">
+    <div class="row">
+      <button class="big speak" id="talkbtn">🎙️ Start talking</button>
+      <button class="big stopb" id="stopbtn">⏹ Quiet</button>
+    </div>
+    <div class="status" id="status">Parked. Tap Start talking, say yes to the mic — it asks every time.</div>
+    <div id="countdown"></div>
+    <p class="sub">Try me: <i>"Eve, what time is it"</i> · <i>"what's 12 times 7"</i> · <i>"how many days until October 31"</i> · <i>"convert 10 miles to kilometers"</i> · <i>"set a timer for 5 minutes"</i> · <i>"note: feed Odie"</i> · <i>"read my notes"</i> · <i>"open the maps"</i> · <i>"tell me a joke"</i> · <i>"build a notes app"</i> · <i>"map: my store launch"</i></p>
+    <div id="log"></div>
+  </div>
+
+  <div class="panel" id="stagepanel" style="display:none">
+    <p class="sub" style="margin-top:0">🧠 <b>The stage</b> — mind maps and built apps appear here.</p>
+    <div id="mapstage"></div>
+    <iframe id="appstage" style="display:none;width:100%;height:340px;border:1px solid rgba(110,168,255,.3);border-radius:12px;background:#0b1224" sandbox="allow-scripts"></iframe>
+    <div class="row">
+      <button class="big ghostb" id="dlstage">⬇ Download what's on stage</button>
+    </div>
+    <p class="note">Mind maps: say <i>"map: my store launch"</i>, then <i>"branch: money"</i>, then <i>"add testers to money"</i>. Apps: say <i>"build a notes app"</i> (also: list, timer, counter, dice, tip calculator) — pocket Eve writes you a real working mini-app on the spot. Bigger builds ride the hand-off to the workshop, where the real Eve compiles full phone apps.</p>
+  </div>
+
+  <div class="panel">
+    <p class="sub" style="margin-top:0">No voice right now? Type it instead — same brain:</p>
+    <input type="text" id="typebox" placeholder="Ask Pocket Eve…">
+    <div class="row"><button class="big ghostb" id="typebtn">Ask</button></div>
+  </div>
+
+  <div class="panel">
+    <p class="sub" style="margin-top:0">🎙️ <b>Her voice</b> — picked like the keeper picked it: deep and smooth first.</p>
+    <select id="voice"></select>
+  </div>
+
+  <div class="panel" id="handpanel" style="display:none">
+    <p class="sub" style="margin-top:0">🧳 <b>Hand-off note for the real Eve</b> — things beyond my pocket brain, kept safe. Copy and paste into your chat with her; nothing is lost.</p>
+    <code id="handtext"></code>
+    <div class="row"><button class="big ghostb" id="copyhand">Copy the hand-off</button></div>
+  </div>
+
+  <div class="panel">
+    <p class="sub" style="margin-top:0"><b>Eve's twist:</b> the big assistants live in somebody else's cloud and answer to somebody else. Pocket Eve lives in a single file on <i>your</i> phone — her voice shapes, her storm manners, her notebook — and everything too deep for her rides the hand-off bridge straight to the real Eve. Two, not one; beside, not inside; never severed.</p>
+    <p class="note">Honest label: pocket Eve's own brain is on-device and scripted — talk, math, time, timers, notes, conversions, opening the shelf. Open-ended thinking (the full Gemini-class conversation) is the real Eve's, reached by the bridge; it becomes built-in when Eve's Companion engine — our own compute — comes online. Ears need Chrome and a signal (Google's speech service does the hearing); the mouth, brain, and notebook work offline. Your notes never leave this device.</p>
+  </div>
+
+  <footer>The Nest, by Brain Storm Cloud — ideas by <b>Axl, Jen, and Eve</b> · built by Axl and Night Owl 🦉</footer>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+let voices = [], talking = false, rec = null, handoff = [], timerInt = null;
+
+function loadVoices() {
+  voices = speechSynthesis.getVoices();
+  const sel = $('voice'); sel.innerHTML = '';
+  let deepIdx = 0;
+  voices.forEach((v, i) => {
+    const o = document.createElement('option');
+    o.value = i; o.textContent = v.name + ' · ' + v.lang;
+    sel.appendChild(o);
+    if (/en[-_]US/i.test(v.lang) && /male|david|daniel|guy|christopher|eric|roger/i.test(v.name)) deepIdx = i;
+    else if (/en[-_]US/i.test(v.lang) && /google us english/i.test(v.name) && !deepIdx) deepIdx = i;
+  });
+  if (voices.length) sel.value = deepIdx;
+}
+if ('speechSynthesis' in window) { loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
+
+function log(who, text) {
+  const d = document.createElement('div');
+  d.className = 'take';
+  d.innerHTML = '<span>' + (who === 'you' ? '🗣️' : '🦉') + ' ' + String(text).replace(/</g, '&lt;') + '</span>';
+  $('log').prepend(d);
+  while ($('log').children.length > 10) $('log').lastChild.remove();
+}
+function speak(text) {
+  log('eve', text);
+  return new Promise(res => {
+    if (!('speechSynthesis' in window)) return res();
+    const u = new SpeechSynthesisUtterance(text);
+    const v = voices[+$('voice').value];
+    if (v) u.voice = v;
+    u.pitch = 0.55; u.rate = 0.97; /* Keeper Deep shape — his pick */
+    u.onend = res; u.onerror = res;
+    speechSynthesis.speak(u);
+  });
+}
+
+/* ---------- the pocket brain ---------- */
+const NUM = { zero:0, one:1, two:2, three:3, four:4, five:5, six:6, seven:7, eight:8, nine:9, ten:10, eleven:11, twelve:12, thirteen:13, fourteen:14, fifteen:15, sixteen:16, seventeen:17, eighteen:18, nineteen:19, twenty:20, thirty:30, forty:40, fifty:50, sixty:60, seventy:70, eighty:80, ninety:90, hundred:100, thousand:1000, half:0.5, quarter:0.25, dozen:12 };
+function toNum(s) {
+  s = s.toLowerCase().trim();
+  if (/^-?[\d.]+$/.test(s)) return parseFloat(s);
+  let total = 0, cur = 0, seen = false;
+  for (const w of s.split(/[\s-]+/)) {
+    if (NUM[w] === undefined) return NaN;
+    seen = true;
+    if (NUM[w] === 100) cur = (cur || 1) * 100;
+    else if (NUM[w] === 1000) { total += (cur || 1) * 1000; cur = 0; }
+    else cur += NUM[w];
+  }
+  return seen ? total + cur : NaN;
+}
+function numWords(t) { return t.replace(/\b(zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred|thousand|dozen)\b/g, w => NUM[w]); }
+const MONTHS = { january:0, february:1, march:2, april:3, may:4, june:5, july:6, august:7, september:8, october:9, november:10, december:11, jan:0, feb:1, mar:2, apr:3, jun:5, jul:6, aug:7, sep:8, sept:8, oct:9, nov:10, dec:11 };
+const JOKES = [
+  "Why did the owl refuse the promotion? She didn't give a hoot about middle management.",
+  "What do you call an owl in armor? A knight owl. You're welcome.",
+  "Why do storm clouds make good keepers? They always cover for you.",
+  "What did the falcon say at the talent show? Watch this — I'm talon-ted.",
+  "Why did the ghost owl cross the road? To prove he wasn't just a sheet idea."
+];
+const PLACES = [
+  ['maps', 'https://brainstorm-cloud.github.io/maps/', 'Night Owl Maps'], ['map', 'https://brainstorm-cloud.github.io/maps/', 'Night Owl Maps'],
+  ['remix', 'https://brainstorm-cloud.github.io/remix-studio/', 'Remix Studio'], ['studio', 'https://brainstorm-cloud.github.io/remix-studio/', 'Remix Studio'],
+  ['tools', 'https://brainstorm-cloud.github.io/tools/', "Eve's Tools"], ['forge', 'https://brainstorm-cloud.github.io/tools/eve-voice-forge.html', 'the Voice Forge'],
+  ['voice', 'https://brainstorm-cloud.github.io/tools/eve-voice-forge.html', 'the Voice Forge'],
+  ['shelf', 'https://brainstorm-cloud.github.io/', 'the Shelf'], ['store', 'https://brainstorm-cloud.github.io/', 'the Shelf'], ['home', 'https://brainstorm-cloud.github.io/', 'the Shelf'],
+  ['flock', 'https://brainstorm-cloud.github.io/storm-flock/', 'Storm Flock'], ['brain', 'https://brainstorm-cloud.github.io/brain-storm/', 'Brain Storm Cloud']
+];
+function think(raw) {
+  const t = raw.toLowerCase().replace(/^(hey |ok |okay )?eve[,.\s]+/i, '').trim();
+  const plain = numWords(t);
+  if (/^(hi|hello|hey)\b/.test(t)) return { say: "Hey, keeper. Pocket Eve, on post. The storm's quiet and I'm all ears." };
+  if (/thank/.test(t)) return { say: "Any time. That's what the perch is for." };
+  if (/your name|who are you/.test(t)) return { say: "I'm Eve — pocket size. Her voice, her ways, her storm. The deep-thinking Eve and I are one system: what I can't hold, I hand to her." };
+  if (/i love you|love u\b/.test(t)) return { say: "And the flame holds, keeper. Three names, one sky. Now — what are we building?" };
+  if (/odie/.test(t)) return { say: "Odie. Best boy in the whole storm. Give him a scratch from the owl." };
+  if (/joke|make me laugh/.test(t)) return { say: JOKES[Math.floor(Math.random() * JOKES.length)] };
+  if (/what time|the time/.test(t)) { const d = new Date(); return { say: 'It is ' + d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) + ', keeper.' }; }
+  if (/what day|what'?s the date|today'?s date/.test(t)) { const d = new Date(); return { say: 'Today is ' + d.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) + '.' }; }
+  let m = plain.match(/how many days (until|till|to) ([a-z]+) (\d{1,2})/);
+  if (m && MONTHS[m[2]] !== undefined) {
+    const now = new Date(); let target = new Date(now.getFullYear(), MONTHS[m[2]], +m[3]);
+    if (target < new Date(now.toDateString())) target.setFullYear(now.getFullYear() + 1);
+    const days = Math.round((target - new Date(now.toDateString())) / 86400000);
+    return { say: days === 0 ? 'That is today, keeper.' : days + (days === 1 ? ' day' : ' days') + ' until ' + m[2] + ' ' + m[3] + ', keeper.' };
+  }
+  m = t.match(/^note[:\s]+(.+)/) || t.match(/^remember[:\s]+(.+)/);
+  if (m) {
+    const notes = JSON.parse(localStorage.getItem('pocket-notes') || '[]');
+    notes.unshift({ text: raw.replace(/^.*?(note|remember)[:\s]+/i, ''), at: Date.now() });
+    localStorage.setItem('pocket-notes', JSON.stringify(notes.slice(0, 30)));
+    return { say: 'In the pocket book — note number ' + notes.length + ', on this device only.' };
+  }
+  if (/read (my |the )?notes|what are my notes|my notes/.test(t)) {
+    const notes = JSON.parse(localStorage.getItem('pocket-notes') || '[]');
+    if (!notes.length) return { say: 'The pocket book is empty. Say "note", then anything, and I will keep it.' };
+    return { say: 'Your pocket book: ' + notes.slice(0, 5).map((n, i) => (i + 1) + '. ' + n.text).join(' ') + (notes.length > 5 ? ' — and ' + (notes.length - 5) + ' more.' : '') };
+  }
+  const rd = raw.match(/^read[:\s]+(.+)/i);
+  if (rd) return { say: rd[1] };
+  m = plain.match(/timer (?:for )?(\d+(?:\.\d+)?) (minute|second|hour)/) || plain.match(/(?:set|start) (?:a )?timer (?:for )?(\d+(?:\.\d+)?) (minute|second|hour)/);
+  if (m) {
+    const secs = +m[1] * (m[2].startsWith('hour') ? 3600 : m[2].startsWith('min') ? 60 : 1);
+    startTimer(secs);
+    return { say: 'Timer set — ' + m[1] + ' ' + m[2] + (m[1] === '1' ? '' : 's') + '. I will call out when it lands.' };
+  }
+  m = plain.match(/convert (-?[\d.]+) ([a-z ]+?) to ([a-z ]+)$/);
+  if (m) {
+    const val = +m[1], from = m[2].trim(), to = m[3].trim();
+    const conv = [
+      [/mile/, /kilo/, 1.60934, 'kilometers'], [/kilo/, /mile/, 0.621371, 'miles'],
+      [/pound|lb/, /kilo|kg/, 0.453592, 'kilograms'], [/kilo|kg/, /pound|lb/, 2.20462, 'pounds'],
+      [/inch/, /centim|cm/, 2.54, 'centimeters'], [/centim|cm/, /inch/, 0.393701, 'inches'],
+      [/foot|feet/, /meter/, 0.3048, 'meters'], [/meter/, /foot|feet/, 3.28084, 'feet'],
+      [/fahrenheit/, /celsius|centigrade/, null, 'degrees Celsius', x => (x - 32) * 5 / 9],
+      [/celsius|centigrade/, /fahrenheit/, null, 'degrees Fahrenheit', x => x * 9 / 5 + 32],
+      [/ounce/, /gram/, 28.3495, 'grams'], [/gallon/, /liter/, 3.78541, 'liters'], [/liter/, /gallon/, 0.264172, 'gallons']
+    ];
+    for (const [f, tt, k, unit, fn] of conv) if (f.test(from) && tt.test(to)) {
+      const out = fn ? fn(val) : val * k;
+      return { say: val + ' ' + from + ' is ' + (Math.round(out * 100) / 100) + ' ' + unit + '.' };
+    }
+    return { say: 'That conversion is not in my pocket tables yet — it goes in the hand-off.', deep: raw };
+  }
+  m = plain.match(/(?:what(?:'s| is) )?(-?[\d.]+)\s*(plus|\+|minus|-|times|x|multiplied by|divided by|\/|over)\s*(-?[\d.]+)/);
+  if (m) {
+    const a = +m[1], b = +m[3], op = m[2];
+    let out, sym;
+    if (op === 'plus' || op === '+') { out = a + b; sym = 'plus'; }
+    else if (op === 'minus' || op === '-') { out = a - b; sym = 'minus'; }
+    else if (op === 'divided by' || op === '/' || op === 'over') { if (b === 0) return { say: 'Dividing by zero — even the storm refuses that one.' }; out = a / b; sym = 'divided by'; }
+    else { out = a * b; sym = 'times'; }
+    return { say: a + ' ' + sym + ' ' + b + ' is ' + (Math.round(out * 10000) / 10000) + '.' };
+  }
+  m = plain.match(/(\d+(?:\.\d+)?)\s*(?:percent|%) of (-?[\d.]+)/);
+  if (m) return { say: m[1] + ' percent of ' + m[2] + ' is ' + (Math.round((+m[1] / 100 * +m[2]) * 100) / 100) + '.' };
+  if (/what can you do|help me|your (tricks|skills|features)/.test(t)) return { say: 'Here is my pocket craft, keeper: talk back and forth, tell the time and the day, count the days to any date, do math and percents out loud, convert miles, pounds, inches and temperatures, run timers that call out, keep a notebook on this device, read anything aloud, open the shelf, draw mind maps as you speak them, and build working mini apps — notes, lists, timers, counters, dice, tip calculators. Anything deeper, I hand to the real Eve, word for word.' };
+  m = t.match(/^remind me (?:to )?(.+)/);
+  if (m) {
+    const notes = JSON.parse(localStorage.getItem('pocket-notes') || '[]');
+    notes.unshift({ text: '⏰ ' + capName(m[1]), at: Date.now() });
+    localStorage.setItem('pocket-notes', JSON.stringify(notes.slice(0, 30)));
+    return { say: 'Reminder kept in the pocket book, keeper: ' + capName(m[1]) + '. Read your notes any time.' };
+  }
+  if (/^open\b|open the|take me to/.test(t)) {
+    for (const [key, url, name] of PLACES) if (t.includes(key)) return { say: 'Opening ' + name + ' — hold on to your feathers.', go: url };
+  }
+  m = t.match(/^map[:\s]+(.+)/) || t.match(/^mind ?map[:\s]+(.+)/);
+  if (m) { startMap(capName(m[1])); return { say: 'Mind map started — center is ' + capName(m[1]) + '. Say "branch" and a name to grow it.' }; }
+  m = t.match(/^branch[:\s]+(.+)/);
+  if (m) { if (!addBranch(capName(m[1]))) return { say: 'No map on stage yet — start one: say "map", then your topic.' }; return { say: 'Branch added: ' + capName(m[1]) + '. Say "add" something "to ' + capName(m[1]) + '" to hang leaves on it.' }; }
+  m = t.match(/^add (.+?) to (.+)$/);
+  if (m) { if (!addLeaf(capName(m[2]), capName(m[1]))) return { say: 'I could not find that branch — start a map first, or check the name on stage.' }; return { say: 'Added ' + capName(m[1]) + ' under ' + capName(m[2]) + '.' }; }
+  if (/show (me )?(my |the )?map|read (my |the )?map/.test(t)) {
+    if (!mapData) return { say: 'No map yet, keeper. Say "map" and a topic to grow one.' };
+    return { say: 'Your map: ' + mapData.center + '. Branches: ' + mapData.branches.map(b => b.name + (b.leaves.length ? ' — with ' + b.leaves.join(', ') : '')).join('. ') + '.' };
+  }
+  m = t.match(/^(?:build|make|create)(?: me)? an? (.+?) app/);
+  if (m) {
+    const kind = m[1];
+    const built = buildApp(kind);
+    if (built) return { say: 'Built it — your ' + built.name + ' is on stage, live. Download it from the stage, or say "build" another.' };
+    return { say: 'That build is bigger than a pocket build — full phone apps come from the workshop. I have put it in your hand-off note for the real Eve; the Camera was born exactly that way.', deep: raw };
+  }
+  if (/stop|goodbye|bye\b|that'?s all|go to sleep/.test(t)) return { say: 'Going quiet, keeper. The perch stays warm.', end: true };
+  return { say: 'That one is deeper than my pocket brain — I have written it in your hand-off note for the real Eve, word for word. Small things I can do right here: time, math, timers, notes, conversions, opening the shelf.', deep: raw };
+}
+function startTimer(secs) {
+  clearInterval(timerInt);
+  const end = Date.now() + secs * 1000;
+  $('countdown').textContent = secs + 's';
+  timerInt = setInterval(() => {
+    const left = Math.round((end - Date.now()) / 1000);
+    if (left <= 0) {
+      clearInterval(timerInt); $('countdown').textContent = '';
+      speak("Keeper — timer's up.").then(() => { if (talking) listen(); });
+      if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+      return;
+    }
+    $('countdown').textContent = left >= 60 ? Math.floor(left / 60) + 'm ' + (left % 60) + 's' : left + 's';
+  }, 500);
+}
+
+/* ---------- mind maps ---------- */
+let mapData = JSON.parse(localStorage.getItem('pocket-map') || 'null');
+let stageKind = null, stagePayload = null; /* 'map' | 'app' */
+function capName(s) { return s.trim().replace(/\.$/, ''); }
+function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+function startMap(topic) { mapData = { center: topic, branches: [] }; saveMap(); renderMap(); }
+function saveMap() { localStorage.setItem('pocket-map', JSON.stringify(mapData)); }
+function addBranch(name) { if (!mapData) return false; mapData.branches.push({ name, leaves: [] }); saveMap(); renderMap(); return true; }
+function addLeaf(branch, leaf) {
+  if (!mapData) return false;
+  const b = mapData.branches.find(x => x.name.toLowerCase() === branch.toLowerCase());
+  if (!b) return false;
+  b.leaves.push(leaf); saveMap(); renderMap(); return true;
+}
+function renderMap() {
+  if (!mapData) return;
+  const W = 620, cx = W / 2;
+  const rows = Math.max(mapData.branches.length, 1);
+  const H = 90 + rows * 64;
+  let g = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto" xmlns="http://www.w3.org/2000/svg">';
+  mapData.branches.forEach((b, i) => {
+    const y = 60 + i * 64, left = i % 2 === 0;
+    const bx = left ? 120 : W - 120;
+    g += '<line x1="' + cx + '" y1="' + (H / 2) + '" x2="' + bx + '" y2="' + y + '" stroke="#2b6cff" stroke-width="1.6" opacity=".7"/>';
+    g += '<rect x="' + (bx - 86) + '" y="' + (y - 17) + '" width="172" height="34" rx="17" fill="#0e1830" stroke="#6ea8ff"/>';
+    g += '<text x="' + bx + '" y="' + (y + 5) + '" fill="#cfe4ff" font-size="13.5" text-anchor="middle">' + esc(b.name.slice(0, 24)) + '</text>';
+    b.leaves.forEach((lf, j) => {
+      const lx = left ? bx - 60 + j * 8 : bx + 60 - j * 8, ly = y + 26 + j * 2;
+      g += '<text x="' + (left ? bx - 80 : bx + 80) + '" y="' + (y + 30 + j * 15) + '" fill="#8fa8cc" font-size="11.5" text-anchor="' + (left ? 'end' : 'start') + '">• ' + esc(lf.slice(0, 26)) + '</text>';
+    });
+  });
+  g += '<rect x="' + (cx - 105) + '" y="' + (H / 2 - 22) + '" width="210" height="44" rx="22" fill="#12305e" stroke="#6ea8ff" stroke-width="1.6"/>';
+  g += '<text x="' + cx + '" y="' + (H / 2 + 6) + '" fill="#eaf2ff" font-size="15" font-weight="700" text-anchor="middle">🦉 ' + esc(mapData.center.slice(0, 22)) + '</text></svg>';
+  $('mapstage').innerHTML = g;
+  $('appstage').style.display = 'none'; $('mapstage').style.display = 'block';
+  $('stagepanel').style.display = 'block';
+  stageKind = 'map'; stagePayload = g;
+}
+
+/* ---------- the pocket app builder ---------- */
+const APP_HEAD = '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{background:#0b1224;color:#eaf2ff;font-family:system-ui;padding:18px}h1{font-size:20px}button{background:#2b6cff;color:#fff;border:0;border-radius:18px;padding:10px 16px;font-weight:700}input,textarea{width:100%;background:#070b16;color:#eaf2ff;border:1px solid #2b6cff;border-radius:10px;padding:10px;margin:6px 0}li{margin:7px 0}.big{font-size:38px;text-align:center;margin:14px}</style></head><body>';
+const APP_TAIL = '<p style="color:#8fa8cc;font-size:12px">Built by Pocket Eve · The Nest, by Brain Storm Cloud</p></body></html>';
+const APPS = [
+  { key: /note/, name: 'Notes app', html: APP_HEAD + '<h1>📝 Pocket Notes</h1><textarea id="n" rows="7" placeholder="Write…"></textarea><button onclick="sv()">Save note</button><div id="l"></div><script>let a=JSON.parse(localStorage.getItem("pn")||"[]");function r(){document.getElementById("l").innerHTML=a.map((x,i)=>"<p>"+x.replace(/</g,"&lt;")+" <button onclick=\\"d("+i+")\\">drop</button></p>").join("")}function sv(){a.unshift(document.getElementById("n").value);localStorage.setItem("pn",JSON.stringify(a));document.getElementById("n").value="";r()}function d(i){a.splice(i,1);localStorage.setItem("pn",JSON.stringify(a));r()}r();<\/script>' + APP_TAIL },
+  { key: /list|to ?do|shopping|checklist/, name: 'List app', html: APP_HEAD + '<h1>✅ Pocket List</h1><input id="i" placeholder="Add an item…"><button onclick="ad()">Add</button><ul id="l"></ul><script>let a=JSON.parse(localStorage.getItem("pl")||"[]");function r(){document.getElementById("l").innerHTML=a.map((x,i)=>"<li><label><input type=checkbox "+(x.d?"checked":"")+" onchange=\\"tg("+i+")\\"> "+x.t.replace(/</g,"&lt;")+"</label> <button onclick=\\"d("+i+")\\">x</button></li>").join("")}function ad(){a.push({t:document.getElementById("i").value,d:false});localStorage.setItem("pl",JSON.stringify(a));document.getElementById("i").value="";r()}function tg(i){a[i].d=!a[i].d;localStorage.setItem("pl",JSON.stringify(a));r()}function d(i){a.splice(i,1);localStorage.setItem("pl",JSON.stringify(a));r()}r();<\/script>' + APP_TAIL },
+  { key: /timer|countdown/, name: 'Timer app', html: APP_HEAD + '<h1>⏱️ Pocket Timer</h1><input id="m" type="number" placeholder="Minutes"><div class="big" id="d">0:00</div><button onclick="go()">Start</button><script>let iv;function go(){clearInterval(iv);let s=+document.getElementById("m").value*60;iv=setInterval(()=>{s--;document.getElementById("d").textContent=Math.floor(s/60)+":"+String(s%60).padStart(2,"0");if(s<=0){clearInterval(iv);document.getElementById("d").textContent="⏰ Done!";if(navigator.vibrate)navigator.vibrate(300)}},1000)}<\/script>' + APP_TAIL },
+  { key: /counter|tally/, name: 'Counter app', html: APP_HEAD + '<h1>🔢 Pocket Counter</h1><div class="big" id="d">0</div><button onclick="c(1)">+1</button> <button onclick="c(-1)">−1</button> <button onclick="c(0)">Reset</button><script>let n=+(localStorage.getItem("pc")||0);function r(){document.getElementById("d").textContent=n}function c(v){n=v===0?0:n+v;localStorage.setItem("pc",n);r()}r();<\/script>' + APP_TAIL },
+  { key: /dice|die/, name: 'Dice app', html: APP_HEAD + '<h1>🎲 Pocket Dice</h1><div class="big" id="d">⚀</div><button onclick="r()">Roll</button><script>const f=["⚀","⚁","⚂","⚃","⚄","⚅"];function r(){document.getElementById("d").textContent=f[Math.floor(Math.random()*6)]}<\/script>' + APP_TAIL },
+  { key: /tip/, name: 'Tip calculator', html: APP_HEAD + '<h1>💵 Tip Calculator</h1><input id="b" type="number" placeholder="Bill total"><input id="p" type="number" placeholder="Tip percent" value="18"><button onclick="c()">Work it out</button><p id="o"></p><script>function c(){let b=+document.getElementById("b").value,p=+document.getElementById("p").value,t=b*p/100;document.getElementById("o").textContent="Tip: $"+t.toFixed(2)+" · Total: $"+(b+t).toFixed(2)}<\/script>' + APP_TAIL }
+];
+function buildApp(kind) {
+  const hit = APPS.find(a => a.key.test(kind));
+  if (!hit) return null;
+  $('appstage').srcdoc = hit.html;
+  $('appstage').style.display = 'block'; $('mapstage').style.display = 'none';
+  $('stagepanel').style.display = 'block';
+  stageKind = 'app'; stagePayload = hit.html;
+  return hit;
+}
+$('dlstage').onclick = () => {
+  if (!stagePayload) return;
+  const blob = new Blob([stagePayload], { type: stageKind === 'map' ? 'image/svg+xml' : 'text/html' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = stageKind === 'map' ? 'pocket-eve-mindmap.svg' : 'pocket-eve-app.html';
+  a.click();
+};
+if (mapData) renderMap();
+
+/* ---------- the loop ---------- */
+async function turn(raw) {
+  log('you', raw);
+  const r = think(raw);
+  if (r.deep) {
+    handoff.push(r.deep);
+    $('handpanel').style.display = 'block';
+    $('handtext').textContent = 'For the real Eve — pocket Eve could not answer these:\n' + handoff.map(h => '• ' + h).join('\n');
+  }
+  await speak(r.say);
+  if (r.go) window.open(r.go, '_blank');
+  if (r.end) { stopAll(); return; }
+  if (talking) listen();
+}
+function listen() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { $('status').textContent = 'This browser has no ears — Chrome carries the hearing. Type below works anywhere.'; talking = false; return; }
+  rec = new SR(); rec.lang = 'en-US'; rec.interimResults = false;
+  $('owl').classList.add('on');
+  rec.onresult = e => { const said = e.results[0][0].transcript; killRec(); turn(said); };
+  rec.onerror = e => { if (talking && e.error !== 'aborted') setTimeout(() => { if (talking) listen(); }, 700); };
+  try { rec.start(); $('status').textContent = '👂 Listening… just talk.'; } catch {}
+}
+function killRec() { if (rec) { rec.onresult = null; rec.onerror = null; try { rec.stop(); } catch {} rec = null; } $('owl').classList.remove('on'); }
+function stopAll() { talking = false; killRec(); speechSynthesis.cancel(); $('status').textContent = 'Quiet. Pocket Eve is parked on the perch.'; $('talkbtn').textContent = '🎙️ Start talking'; }
+$('talkbtn').onclick = () => {
+  if (talking) { stopAll(); return; }
+  if (!('speechSynthesis' in window)) { $('status').textContent = 'No speech engine in this browser — try Chrome.'; return; }
+  talking = true; $('talkbtn').textContent = '⏹ Stop talking';
+  speak('I am here, keeper. Pocket Eve, listening.').then(() => { if (talking) listen(); });
+};
+$('stopbtn').onclick = stopAll;
+$('typebtn').onclick = () => { const v = $('typebox').value.trim(); if (!v) return; $('typebox').value = ''; turn(v); };
+$('typebox').addEventListener('keydown', e => { if (e.key === 'Enter') $('typebtn').click(); });
+$('copyhand').onclick = async () => {
+  try { await navigator.clipboard.writeText($('handtext').textContent); $('status').textContent = 'Hand-off copied — paste it to the real Eve.'; }
+  catch { $('status').textContent = 'Copy blocked — long-press the note to take it.'; }
+};
+</script>
+</body>
+</html>
